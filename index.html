@@ -441,6 +441,23 @@
       border-radius: 20px;
     }
 
+    /* 音量コントロール */
+    .sound-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #8aacbf;
+      font-size: 0.85rem;
+      margin-top: 4px;
+    }
+
+    .sound-control input[type="range"] {
+      width: 80px;
+      background: #162b3a;
+      accent-color: #5a9ec9;
+      cursor: pointer;
+    }
+
     @media (max-width: 500px) {
       .app {
         padding: 14px 10px;
@@ -514,6 +531,13 @@
         <button class="btn btn-success" id="checkBtn">解答</button>
       </div>
 
+      <div class="sound-control">
+        <span>音</span>
+        <input type="range" id="volumeSlider" min="0" max="100" value="50" />
+        <span id="volumeLabel">50%</span>
+        <button class="btn" id="toggleSoundBtn" style="flex:0 1 auto; padding:4px 16px; min-width:60px; font-size:0.8rem;">オン</button>
+      </div>
+
       <div class="toast" id="toastMessage">挑戦ボタンでスタート</div>
     </div>
 
@@ -558,11 +582,11 @@
           <span style="color:#8aacbf; font-size:0.85rem; margin-left:4px;">(1〜5桁)</span>
         </div>
         <div class="setting-row" style="justify-content:space-between; flex-wrap:wrap; gap:12px;">
-          <span style="color:#7b9eb3; font-size:0.8rem;">※ 同じ名前は使用できません</span>
-          <span style="color:#7b9eb3; font-size:0.8rem;">※ 一人1記録まで</span>
+          <span style="color:#7b9eb3; font-size:0.8rem;">同じ名前は使用できません</span>
+          <span style="color:#7b9eb3; font-size:0.8rem;">一人1記録まで</span>
         </div>
         <div class="delete-section">
-          <button class="btn btn-danger" id="deleteAccountBtn" style="min-width:140px;">🗑️ アカウント削除</button>
+          <button class="btn btn-danger" id="deleteAccountBtn" style="min-width:140px;">アカウント削除</button>
         </div>
       </div>
     </div>
@@ -571,7 +595,7 @@
   <script>
     (function() {
       // ============================================================
-      //  ★★★ Firebase 設定 ★★★
+      //  Firebase 設定
       // ============================================================
       const firebaseConfig = {
         apiKey: "AIzaSyAqe24qeS_gYtMA_gnF_lYNP70keCQcpnA",
@@ -583,7 +607,6 @@
         appId: "1:327969979771:web:709a0fc2a281dc495e91de",
         measurementId: "G-VFLGB9QXR3"
       };
-      // ============================================================
 
       let db = null;
       let rankingRef = null;
@@ -591,12 +614,128 @@
         firebase.initializeApp(firebaseConfig);
         db = firebase.database();
         rankingRef = db.ref('ranking_v5');
-        console.log('✅ Firebase 接続成功');
+        console.log('Firebase 接続成功');
       } catch (e) {
-        console.warn('⚠️ Firebase 初期化エラー → ローカル保存モード', e);
+        console.warn('Firebase 初期化エラー → ローカル保存モード', e);
       }
 
-      // DOM
+      // ============================================================
+      //  サウンドエンジン (Web Audio API)
+      // ============================================================
+      let audioCtx = null;
+      let soundEnabled = true;
+      let masterVolume = 0.5;
+
+      function initAudio() {
+        if (!audioCtx) {
+          audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
+
+      function playTone(freq, duration, type = 'sine', volume = 0.3) {
+        if (!soundEnabled) return;
+        try {
+          initAudio();
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(volume * masterVolume, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + duration);
+        } catch (e) {
+          // 音が出せなくてもゲームは続行
+        }
+      }
+
+      // BGM用ループ (トゥントゥントゥン)
+      let bgmInterval = null;
+      let bgmRunning = false;
+      let bgmPattern = [
+        { freq: 523.25, dur: 0.12, type: 'sine' }, // C5
+        { freq: 587.33, dur: 0.10, type: 'sine' }, // D5
+        { freq: 659.25, dur: 0.14, type: 'sine' }, // E5
+        { freq: 523.25, dur: 0.10, type: 'sine' }, // C5
+        { freq: 587.33, dur: 0.12, type: 'sine' }, // D5
+        { freq: 659.25, dur: 0.16, type: 'sine' }, // E5
+      ];
+      let bgmIndex = 0;
+      let bgmTimeout = null;
+
+      function playBgmNote() {
+        if (!soundEnabled || !bgmRunning) return;
+        try {
+          const note = bgmPattern[bgmIndex % bgmPattern.length];
+          playTone(note.freq, note.dur, note.type, 0.15);
+          bgmIndex++;
+          const nextDelay = note.dur * 1000 + 80;
+          bgmTimeout = setTimeout(playBgmNote, nextDelay);
+        } catch (e) {
+          // エラー時はリセット
+        }
+      }
+
+      function startBgm() {
+        if (bgmRunning) return;
+        bgmRunning = true;
+        bgmIndex = 0;
+        if (bgmTimeout) clearTimeout(bgmTimeout);
+        playBgmNote();
+      }
+
+      function stopBgm() {
+        bgmRunning = false;
+        if (bgmTimeout) {
+          clearTimeout(bgmTimeout);
+          bgmTimeout = null;
+        }
+        bgmIndex = 0;
+      }
+
+      function toggleBgm() {
+        if (bgmRunning) {
+          stopBgm();
+        } else {
+          startBgm();
+        }
+      }
+
+      // 効果音
+      function playCorrectSound() {
+        // 正解: 上行音階
+        setTimeout(() => playTone(523.25, 0.1, 'sine', 0.25), 0);
+        setTimeout(() => playTone(659.25, 0.1, 'sine', 0.25), 120);
+        setTimeout(() => playTone(783.99, 0.15, 'sine', 0.25), 240);
+      }
+
+      function playWrongSound() {
+        // 不正解: 低い音
+        playTone(220, 0.25, 'sawtooth', 0.15);
+      }
+
+      function playStartSound() {
+        // スタート: 軽快な音
+        playTone(440, 0.08, 'sine', 0.2);
+        setTimeout(() => playTone(554.37, 0.08, 'sine', 0.2), 100);
+        setTimeout(() => playTone(659.25, 0.12, 'sine', 0.25), 200);
+      }
+
+      function playStopSound() {
+        // ストップ: 下降音
+        playTone(523.25, 0.1, 'sine', 0.2);
+        setTimeout(() => playTone(440, 0.12, 'sine', 0.2), 120);
+        setTimeout(() => playTone(349.23, 0.15, 'sine', 0.2), 240);
+      }
+
+      // ============================================================
+      //  DOM
+      // ============================================================
       const timerDisplay = document.getElementById('timerDisplay');
       const statusMsg = document.getElementById('statusMessage');
       const eq1a = document.getElementById('eq1a');
@@ -618,6 +757,9 @@
       const deleteAccountBtn = document.getElementById('deleteAccountBtn');
       const nameLockStatus = document.getElementById('nameLockStatus');
       const rankTabContainer = document.getElementById('rankTabContainer');
+      const volumeSlider = document.getElementById('volumeSlider');
+      const volumeLabel = document.getElementById('volumeLabel');
+      const toggleSoundBtn = document.getElementById('toggleSoundBtn');
 
       // タブ
       const tabs = document.querySelectorAll('.tab-btn');
@@ -627,7 +769,9 @@
         settings: document.getElementById('tabSettings')
       };
 
-      // ---------- Cookie 操作 ----------
+      // ============================================================
+      //  Cookie
+      // ============================================================
       function setCookie(name, value, days = 365) {
         const d = new Date();
         d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
@@ -643,29 +787,32 @@
         document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
       }
 
-      // ---------- 状態 ----------
+      // ============================================================
+      //  状態
+      // ============================================================
       let currentEq = { a1: 0, b1: 0, c1: 0, a2: 0, b2: 0, c2: 0, solutionX: 0, solutionY: 0 };
       let timerInterval = null;
       let startTime = null;
       let elapsedSeconds = 0;
       let isGameActive = false;
       let isSolved = false;
-      let allRankingData = []; // 全データ
+      let allRankingData = [];
       let currentUsername = '';
       let isNameLocked = false;
-      let selectedDigit = 3; // 表示中の桁数
+      let selectedDigit = 3;
 
-      // ---------- 設定 ----------
+      // ============================================================
+      //  設定
+      // ============================================================
       function getDigit() { return parseInt(digitSelect.value, 10); }
 
       function getUsername() { return usernameInput.value.trim() || '名無し'; }
 
-      // ---------- 名前ロック状態 ----------
       function updateNameLockStatus() {
         if (isNameLocked) {
           usernameInput.disabled = true;
           saveUsernameBtn.disabled = true;
-          nameLockStatus.textContent = '🔒 変更できません';
+          nameLockStatus.textContent = '変更できません';
           nameLockStatus.style.color = '#f5a3a3';
         } else {
           usernameInput.disabled = false;
@@ -674,7 +821,9 @@
         }
       }
 
-      // ---------- 問題生成 ----------
+      // ============================================================
+      //  問題生成
+      // ============================================================
       function generateEquation() {
         const digit = getDigit();
         const maxVal = Math.pow(10, digit) - 1;
@@ -708,7 +857,9 @@
         eq2c.textContent = eq.c2;
       }
 
-      // ---------- タイマー ----------
+      // ============================================================
+      //  タイマー
+      // ============================================================
       function startTimer() {
         if (timerInterval) clearInterval(timerInterval);
         startTime = Date.now() - elapsedSeconds * 1000;
@@ -729,7 +880,9 @@
         timerDisplay.textContent = '0.0';
       }
 
-      // ---------- ゲームリセット ----------
+      // ============================================================
+      //  ゲーム
+      // ============================================================
       function resetGame() {
         stopTimer();
         resetTimer();
@@ -746,10 +899,11 @@
         eq2c.textContent = '?';
         inputX.value = 0;
         inputY.value = 0;
-        toastMessage('⏹ ストップしました');
+        toastMessage('ストップしました');
+        playStopSound();
+        stopBgm();
       }
 
-      // ---------- ゲーム ----------
       function newGame() {
         if (!isNameLocked) {
           toastMessage('先に設定タブで名前を保存してください');
@@ -769,6 +923,8 @@
         checkBtn.disabled = false;
         toastMessage('スタート！');
         startTimer();
+        playStartSound();
+        startBgm();
       }
 
       function checkAnswer() {
@@ -791,16 +947,17 @@
           isSolved = true;
           isGameActive = false;
           stopTimer();
+          stopBgm();
           const finalTime = parseFloat(timerDisplay.textContent);
           statusMsg.textContent = `正解！ ${finalTime.toFixed(1)}s`;
           statusMsg.style.color = '#8bdaa0';
           checkBtn.disabled = true;
           toastMessage(`正解！ ${finalTime.toFixed(1)}秒`);
+          playCorrectSound();
 
           const name = getUsername();
           const digit = getDigit();
 
-          // 同名チェック (全データから)
           const existing = allRankingData.find(r => r.username === name);
           if (existing) {
             toastMessage(`「${name}」は既に使用されています`);
@@ -818,10 +975,13 @@
           toastMessage('不正解');
           statusMsg.textContent = '不正解';
           statusMsg.style.color = '#f5a3a3';
+          playWrongSound();
         }
       }
 
-      // ---------- ランキング (桁別) ----------
+      // ============================================================
+      //  ランキング
+      // ============================================================
       function saveRanking(entry) {
         if (rankingRef) {
           rankingRef.push(entry).catch(() => saveLocal(entry));
@@ -863,9 +1023,7 @@
       }
 
       function renderRanking() {
-        // 選択中の桁数でフィルタ
         const filtered = allRankingData.filter(item => item.digit === selectedDigit);
-        // タイム順にソートして上位3人
         filtered.sort((a, b) => a.time - b.time);
         const top3 = filtered.slice(0, 3);
 
@@ -876,7 +1034,7 @@
         }
         top3.forEach((item, i) => {
           const li = document.createElement('li');
-          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
+          const medal = i === 0 ? '1' : i === 1 ? '2' : '3';
           li.innerHTML = `
             <span><span class="rank">${medal}</span> ${item.username}</span>
             <span class="time">${item.time}s</span>
@@ -885,7 +1043,9 @@
         });
       }
 
-      // ---------- アカウント削除 ----------
+      // ============================================================
+      //  アカウント削除
+      // ============================================================
       function deleteAccount() {
         const name = getUsername();
         if (!name || name === '名無し') {
@@ -934,6 +1094,7 @@
               toastMessage(`「${name}」のアカウントと記録を削除しました`);
               renderRanking();
               resetGame();
+              stopBgm();
             }).catch((err) => {
               console.error('削除エラー:', err);
               toastMessage('削除に失敗しました');
@@ -954,10 +1115,13 @@
           toastMessage(`「${name}」のアカウントと記録を削除しました (ローカル)`);
           renderRanking();
           resetGame();
+          stopBgm();
         }
       }
 
-      // ---------- トースト ----------
+      // ============================================================
+      //  トースト
+      // ============================================================
       function toastMessage(msg) {
         toast.textContent = msg;
         setTimeout(() => {
@@ -967,7 +1131,9 @@
         }, 3000);
       }
 
-      // ---------- タブ切り替え ----------
+      // ============================================================
+      //  タブ切り替え
+      // ============================================================
       tabs.forEach(btn => {
         btn.addEventListener('click', () => {
           tabs.forEach(b => b.classList.remove('active'));
@@ -980,14 +1146,15 @@
         });
       });
 
-      // ---------- ランキング桁タブ ----------
+      // ============================================================
+      //  ランキング桁タブ
+      // ============================================================
       rankTabContainer.addEventListener('click', (e) => {
         const btn = e.target.closest('.rank-tab-btn');
         if (!btn) return;
         const digit = parseInt(btn.dataset.digit, 10);
         if (isNaN(digit)) return;
 
-        // タブアクティブ切り替え
         rankTabContainer.querySelectorAll('.rank-tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
 
@@ -995,7 +1162,9 @@
         renderRanking();
       });
 
-      // ---------- ユーザー名 ----------
+      // ============================================================
+      //  ユーザー名
+      // ============================================================
       function loadUsernameFromCookie() {
         const saved = getCookie('eq_username');
         const locked = getCookie('eq_name_locked');
@@ -1032,7 +1201,31 @@
         toastMessage(`ユーザー名: ${name} を保存しました (変更不可)`);
       });
 
-      // ---------- 初期化 ----------
+      // ============================================================
+      //  サウンドコントロール
+      // ============================================================
+      volumeSlider.addEventListener('input', () => {
+        masterVolume = parseInt(volumeSlider.value, 10) / 100;
+        volumeLabel.textContent = `${Math.round(masterVolume * 100)}%`;
+      });
+
+      toggleSoundBtn.addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        toggleSoundBtn.textContent = soundEnabled ? 'オン' : 'オフ';
+        if (!soundEnabled) {
+          stopBgm();
+        } else {
+          initAudio();
+          if (isGameActive && !isSolved) {
+            startBgm();
+          }
+        }
+        toastMessage(soundEnabled ? 'サウンドオン' : 'サウンドオフ');
+      });
+
+      // ============================================================
+      //  初期化
+      // ============================================================
       function init() {
         loadUsernameFromCookie();
         loadRanking();
@@ -1056,6 +1249,15 @@
         digitSelect.addEventListener('change', () => {
           toastMessage(`桁数を ${digitSelect.value} に変更`);
         });
+
+        // 最初の音声コンテキストはユーザー操作で開く
+        document.addEventListener('click', () => {
+          if (!audioCtx) {
+            try {
+              audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {}
+          }
+        }, { once: true });
       }
 
       init();
