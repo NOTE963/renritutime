@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>renritutime</title>
+  <title>連立方程式 タイムアタック</title>
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
   </script>
@@ -583,6 +583,7 @@
       let rankingData = [];
       let currentUsername = '';
       let allEntries = {}; // Firebaseからの全エントリ（キーと値）
+      let allEntriesKeys = {}; // キーと値のマップ
 
       // ---------- 設定 ----------
       function getDigit() { return parseInt(digitSelect.value, 10); }
@@ -691,8 +692,8 @@
           const name = getUsername();
           const digit = getDigit();
 
-          // 同名チェック (ランキングに同名が存在するか)
-          const existing = rankingData.find(r => r.username === name);
+          // 同名チェック (ランキングに同名が存在するか) - 自分以外で
+          const existing = rankingData.find(r => r.username === name && r.username !== currentUsername);
           if (existing) {
             toastMessage(`「${name}」は既に使用されています`);
             return;
@@ -746,7 +747,12 @@
           rankingRef.orderByChild('time').limitToFirst(3).on('value', (snap) => {
             const data = snap.val();
             allEntries = data || {};
+            // キーと値を保存
+            allEntriesKeys = {};
             if (data) {
+              Object.keys(data).forEach(key => {
+                allEntriesKeys[key] = data[key];
+              });
               const list = Object.values(data);
               list.sort((a, b) => a.time - b.time);
               rankingData = list.slice(0, 3);
@@ -790,6 +796,66 @@
         });
       }
 
+      // ---------- ユーザー名変更時のランキング更新 ----------
+      function updateRankingUsername(oldName, newName) {
+        if (oldName === newName) return;
+        if (!rankingRef) {
+          // ローカルモード
+          rankingData = rankingData.map(item => {
+            if (item.username === oldName) {
+              return { ...item, username: newName };
+            }
+            return item;
+          });
+          localStorage.setItem('rank_v5', JSON.stringify(rankingData));
+          renderRanking();
+          return;
+        }
+
+        // Firebase: 該当ユーザーの全エントリを検索して更新
+        rankingRef.once('value', (snap) => {
+          const data = snap.val();
+          if (!data) return;
+          const updates = {};
+          let found = false;
+          Object.keys(data).forEach(key => {
+            if (data[key].username === oldName) {
+              updates[key] = { ...data[key], username: newName };
+              found = true;
+            }
+          });
+          if (!found) {
+            // ローカルにも反映
+            rankingData = rankingData.map(item => {
+              if (item.username === oldName) {
+                return { ...item, username: newName };
+              }
+              return item;
+            });
+            localStorage.setItem('rank_v5', JSON.stringify(rankingData));
+            renderRanking();
+            return;
+          }
+          rankingRef.update(updates).then(() => {
+            // ローカルキャッシュも更新
+            rankingData = rankingData.map(item => {
+              if (item.username === oldName) {
+                return { ...item, username: newName };
+              }
+              return item;
+            });
+            localStorage.setItem('rank_v5', JSON.stringify(rankingData));
+            renderRanking();
+            toastMessage(`ランキングの名前を「${newName}」に更新しました`);
+          }).catch(err => {
+            console.error('名前更新エラー:', err);
+            toastMessage('名前の更新に失敗しました');
+          });
+        }).catch(err => {
+          console.error('データ取得エラー:', err);
+        });
+      }
+
       // ---------- アカウント削除 ----------
       function deleteAccount() {
         const name = getUsername();
@@ -811,7 +877,6 @@
 
         // Firebaseから該当ユーザーの全エントリを削除
         if (rankingRef) {
-          // まず全データを取得して該当ユーザーを探す
           rankingRef.once('value', (snap) => {
             const data = snap.val();
             if (!data) {
@@ -831,10 +896,8 @@
               return;
             }
             rankingRef.update(updates).then(() => {
-              // ローカルからも削除
               rankingData = rankingData.filter(r => r.username !== name);
               localStorage.setItem('rank_v5', JSON.stringify(rankingData));
-              // Cookie削除
               deleteCookie('eq_username');
               usernameInput.value = '';
               currentUsername = '';
@@ -849,7 +912,6 @@
             toastMessage('データ取得に失敗しました');
           });
         } else {
-          // ローカルモード
           rankingData = rankingData.filter(r => r.username !== name);
           localStorage.setItem('rank_v5', JSON.stringify(rankingData));
           deleteCookie('eq_username');
@@ -893,20 +955,31 @@
       }
 
       saveUsernameBtn.addEventListener('click', () => {
-        const name = usernameInput.value.trim();
-        if (!name) {
+        const newName = usernameInput.value.trim();
+        if (!newName) {
           toastMessage('名前を入力してください');
           return;
         }
-        // 同名チェック (ランキングに同名が存在するか)
-        const exists = rankingData.some(r => r.username === name);
+
+        const oldName = currentUsername || '';
+
+        // 同名チェック (自分以外で同名がいるか)
+        const exists = rankingData.some(r => r.username === newName && r.username !== oldName);
         if (exists) {
-          toastMessage(`「${name}」は既に使用されています`);
+          toastMessage(`「${newName}」は既に使用されています`);
           return;
         }
-        setCookie('eq_username', name);
-        currentUsername = name;
-        toastMessage(`ユーザー名: ${name} を保存`);
+
+        // Cookie保存
+        setCookie('eq_username', newName);
+        currentUsername = newName;
+
+        // ランキングの名前を更新（既存のものも）
+        if (oldName && oldName !== newName) {
+          updateRankingUsername(oldName, newName);
+        } else {
+          toastMessage(`ユーザー名: ${newName} を保存`);
+        }
       });
 
       // ---------- 初期化 ----------
