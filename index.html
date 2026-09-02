@@ -219,6 +219,11 @@
       border-bottom-color: #752f2f;
     }
 
+    .btn-warning {
+      background: #c97d2b;
+      border-bottom-color: #8a5518;
+    }
+
     .btn:disabled {
       opacity: 0.4;
       transform: translateY(4px);
@@ -355,6 +360,11 @@
       border-color: #5a9ec9;
     }
 
+    .setting-row input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .setting-row .btn {
       flex: 0 1 auto;
       padding: 8px 18px;
@@ -381,6 +391,12 @@
       border-top: 1px solid #2f4a5e;
       display: flex;
       justify-content: flex-end;
+    }
+
+    .name-locked {
+      color: #8aacbf;
+      font-size: 0.8rem;
+      margin-left: 8px;
     }
 
     @media (max-width: 500px) {
@@ -449,6 +465,7 @@
 
       <div class="actions">
         <button class="btn btn-primary" id="newGameBtn">挑戦</button>
+        <button class="btn btn-warning" id="stopBtn">⏹ ストップ</button>
         <button class="btn btn-success" id="checkBtn">解答</button>
       </div>
 
@@ -476,6 +493,7 @@
           <label>ユーザー名</label>
           <input type="text" id="usernameInput" placeholder="名無し" maxlength="16" />
           <button class="btn btn-primary" id="saveUsernameBtn" style="flex:0 1 auto; padding:6px 16px;">保存</button>
+          <span class="name-locked" id="nameLockStatus"></span>
         </div>
         <div class="setting-row">
           <label>桁数</label>
@@ -503,7 +521,7 @@
   <script>
     (function() {
       // ============================================================
-      //  ★★★ Firebase 設定 (あなたのプロジェクト) ★★★
+      //  ★★★ Firebase 設定 ★★★
       // ============================================================
       const firebaseConfig = {
         apiKey: "AIzaSyAqe24qeS_gYtMA_gnF_lYNP70keCQcpnA",
@@ -541,6 +559,7 @@
       const inputY = document.getElementById('inputY');
       const checkBtn = document.getElementById('checkBtn');
       const newGameBtn = document.getElementById('newGameBtn');
+      const stopBtn = document.getElementById('stopBtn');
       const rankingList = document.getElementById('rankingList');
       const toast = document.getElementById('toastMessage');
       const usernameInput = document.getElementById('usernameInput');
@@ -548,6 +567,7 @@
       const digitSelect = document.getElementById('digitSelect');
       const rankFilter = document.getElementById('rankFilter');
       const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+      const nameLockStatus = document.getElementById('nameLockStatus');
 
       // タブ
       const tabs = document.querySelectorAll('.tab-btn');
@@ -582,13 +602,27 @@
       let isSolved = false;
       let rankingData = [];
       let currentUsername = '';
-      let allEntries = {}; // Firebaseからの全エントリ（キーと値）
-      let allEntriesKeys = {}; // キーと値のマップ
+      let allEntries = {};
+      let isNameLocked = false; // 名前が一度設定されたらロック
 
       // ---------- 設定 ----------
       function getDigit() { return parseInt(digitSelect.value, 10); }
 
       function getUsername() { return usernameInput.value.trim() || '名無し'; }
+
+      // ---------- 名前ロック状態の更新 ----------
+      function updateNameLockStatus() {
+        if (isNameLocked) {
+          usernameInput.disabled = true;
+          saveUsernameBtn.disabled = true;
+          nameLockStatus.textContent = '🔒 変更できません';
+          nameLockStatus.style.color = '#f5a3a3';
+        } else {
+          usernameInput.disabled = false;
+          saveUsernameBtn.disabled = false;
+          nameLockStatus.textContent = '';
+        }
+      }
 
       // ---------- 問題生成 (桁数指定) ----------
       function generateEquation() {
@@ -645,8 +679,34 @@
         timerDisplay.textContent = '0.0';
       }
 
+      // ---------- ゲームリセット（ストップボタン） ----------
+      function resetGame() {
+        stopTimer();
+        resetTimer();
+        isGameActive = false;
+        isSolved = false;
+        checkBtn.disabled = true;
+        statusMsg.textContent = '停止';
+        statusMsg.style.color = '#f5a3a3';
+        // 問題表示は ? のままにする
+        eq1a.textContent = '?';
+        eq1b.textContent = '?';
+        eq1c.textContent = '?';
+        eq2a.textContent = '?';
+        eq2b.textContent = '?';
+        eq2c.textContent = '?';
+        inputX.value = 0;
+        inputY.value = 0;
+        toastMessage('⏹ ストップしました');
+      }
+
       // ---------- ゲーム ----------
       function newGame() {
+        // 名前がロックされていない場合は新ゲーム開始できない
+        if (!isNameLocked) {
+          toastMessage('先に設定タブで名前を保存してください');
+          return;
+        }
         stopTimer();
         resetTimer();
         const eq = generateEquation();
@@ -692,17 +752,10 @@
           const name = getUsername();
           const digit = getDigit();
 
-          // 同名チェック (ランキングに同名が存在するか) - 自分以外で
-          const existing = rankingData.find(r => r.username === name && r.username !== currentUsername);
+          // 同名チェック
+          const existing = rankingData.find(r => r.username === name);
           if (existing) {
             toastMessage(`「${name}」は既に使用されています`);
-            return;
-          }
-
-          // 自分がすでに記録を持っているかチェック (一人1記録)
-          const myEntry = rankingData.find(r => r.username === name);
-          if (myEntry) {
-            toastMessage(`「${name}」は既に記録があります (一人1記録)`);
             return;
           }
 
@@ -727,7 +780,6 @@
         } else {
           saveLocal(entry);
         }
-        // ローカルキャッシュ更新
         rankingData.push(entry);
         rankingData.sort((a, b) => a.time - b.time);
         rankingData = rankingData.slice(0, 3);
@@ -747,12 +799,7 @@
           rankingRef.orderByChild('time').limitToFirst(3).on('value', (snap) => {
             const data = snap.val();
             allEntries = data || {};
-            // キーと値を保存
-            allEntriesKeys = {};
             if (data) {
-              Object.keys(data).forEach(key => {
-                allEntriesKeys[key] = data[key];
-              });
               const list = Object.values(data);
               list.sort((a, b) => a.time - b.time);
               rankingData = list.slice(0, 3);
@@ -796,66 +843,6 @@
         });
       }
 
-      // ---------- ユーザー名変更時のランキング更新 ----------
-      function updateRankingUsername(oldName, newName) {
-        if (oldName === newName) return;
-        if (!rankingRef) {
-          // ローカルモード
-          rankingData = rankingData.map(item => {
-            if (item.username === oldName) {
-              return { ...item, username: newName };
-            }
-            return item;
-          });
-          localStorage.setItem('rank_v5', JSON.stringify(rankingData));
-          renderRanking();
-          return;
-        }
-
-        // Firebase: 該当ユーザーの全エントリを検索して更新
-        rankingRef.once('value', (snap) => {
-          const data = snap.val();
-          if (!data) return;
-          const updates = {};
-          let found = false;
-          Object.keys(data).forEach(key => {
-            if (data[key].username === oldName) {
-              updates[key] = { ...data[key], username: newName };
-              found = true;
-            }
-          });
-          if (!found) {
-            // ローカルにも反映
-            rankingData = rankingData.map(item => {
-              if (item.username === oldName) {
-                return { ...item, username: newName };
-              }
-              return item;
-            });
-            localStorage.setItem('rank_v5', JSON.stringify(rankingData));
-            renderRanking();
-            return;
-          }
-          rankingRef.update(updates).then(() => {
-            // ローカルキャッシュも更新
-            rankingData = rankingData.map(item => {
-              if (item.username === oldName) {
-                return { ...item, username: newName };
-              }
-              return item;
-            });
-            localStorage.setItem('rank_v5', JSON.stringify(rankingData));
-            renderRanking();
-            toastMessage(`ランキングの名前を「${newName}」に更新しました`);
-          }).catch(err => {
-            console.error('名前更新エラー:', err);
-            toastMessage('名前の更新に失敗しました');
-          });
-        }).catch(err => {
-          console.error('データ取得エラー:', err);
-        });
-      }
-
       // ---------- アカウント削除 ----------
       function deleteAccount() {
         const name = getUsername();
@@ -864,7 +851,6 @@
           return;
         }
 
-        // 自分がランキングにいるか確認
         const myEntry = rankingData.find(r => r.username === name);
         if (!myEntry) {
           toastMessage(`「${name}」の記録は見つかりません`);
@@ -875,7 +861,6 @@
           return;
         }
 
-        // Firebaseから該当ユーザーの全エントリを削除
         if (rankingRef) {
           rankingRef.once('value', (snap) => {
             const data = snap.val();
@@ -899,10 +884,14 @@
               rankingData = rankingData.filter(r => r.username !== name);
               localStorage.setItem('rank_v5', JSON.stringify(rankingData));
               deleteCookie('eq_username');
+              deleteCookie('eq_name_locked');
               usernameInput.value = '';
               currentUsername = '';
+              isNameLocked = false;
+              updateNameLockStatus();
               toastMessage(`「${name}」のアカウントと記録を削除しました`);
               renderRanking();
+              resetGame();
             }).catch((err) => {
               console.error('削除エラー:', err);
               toastMessage('削除に失敗しました');
@@ -915,10 +904,14 @@
           rankingData = rankingData.filter(r => r.username !== name);
           localStorage.setItem('rank_v5', JSON.stringify(rankingData));
           deleteCookie('eq_username');
+          deleteCookie('eq_name_locked');
           usernameInput.value = '';
           currentUsername = '';
+          isNameLocked = false;
+          updateNameLockStatus();
           toastMessage(`「${name}」のアカウントと記録を削除しました (ローカル)`);
           renderRanking();
+          resetGame();
         }
       }
 
@@ -945,41 +938,43 @@
         });
       });
 
-      // ---------- ユーザー名 (Cookie & 重複チェック) ----------
+      // ---------- ユーザー名 (一度だけ設定可能) ----------
       function loadUsernameFromCookie() {
         const saved = getCookie('eq_username');
+        const locked = getCookie('eq_name_locked');
         if (saved) {
           usernameInput.value = saved;
           currentUsername = saved;
         }
+        if (locked === 'true') {
+          isNameLocked = true;
+        }
+        updateNameLockStatus();
       }
 
       saveUsernameBtn.addEventListener('click', () => {
-        const newName = usernameInput.value.trim();
-        if (!newName) {
+        if (isNameLocked) {
+          toastMessage('名前は一度設定すると変更できません');
+          return;
+        }
+        const name = usernameInput.value.trim();
+        if (!name) {
           toastMessage('名前を入力してください');
           return;
         }
-
-        const oldName = currentUsername || '';
-
-        // 同名チェック (自分以外で同名がいるか)
-        const exists = rankingData.some(r => r.username === newName && r.username !== oldName);
+        // 同名チェック (ランキングに同名が存在するか)
+        const exists = rankingData.some(r => r.username === name);
         if (exists) {
-          toastMessage(`「${newName}」は既に使用されています`);
+          toastMessage(`「${name}」は既に使用されています`);
           return;
         }
-
-        // Cookie保存
-        setCookie('eq_username', newName);
-        currentUsername = newName;
-
-        // ランキングの名前を更新（既存のものも）
-        if (oldName && oldName !== newName) {
-          updateRankingUsername(oldName, newName);
-        } else {
-          toastMessage(`ユーザー名: ${newName} を保存`);
-        }
+        // 名前をロック
+        isNameLocked = true;
+        setCookie('eq_username', name);
+        setCookie('eq_name_locked', 'true');
+        currentUsername = name;
+        updateNameLockStatus();
+        toastMessage(`ユーザー名: ${name} を保存しました (変更不可)`);
       });
 
       // ---------- 初期化 ----------
@@ -994,6 +989,7 @@
 
         checkBtn.addEventListener('click', checkAnswer);
         newGameBtn.addEventListener('click', newGame);
+        stopBtn.addEventListener('click', resetGame);
         deleteAccountBtn.addEventListener('click', deleteAccount);
 
         document.addEventListener('keydown', (e) => {
