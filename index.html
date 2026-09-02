@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>renritutime</title>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
+  </script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js">
+  </script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+    }
+
+    body {
+      background: #0d1a26;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .app {
+      max-width: 700px;
+      width: 100%;
+      background: #162b3b;
+      border-radius: 28px;
+      padding: 24px 20px 28px;
+      box-shadow: 0 16px 30px -8px rgba(0, 0, 0, 0.8);
+      border: 1px solid #2f4a5e;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      background: #0f1e2b;
+      padding: 6px 8px;
+      border-radius: 40px;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 6px;
+      border: none;
+      background: transparent;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #8aadc2;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .tab-btn.active {
+      background: #2a4a60;
+      color: #f0f9ff;
+    }
+
+    .tab-btn:hover:not(.active) {
+      background: #1f384b;
+      color: #c5dceb;
+    }
+
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0f1e2b;
+      border-radius: 40px;
+      padding: 8px 16px;
+      margin-bottom: 14px;
+      color: #c8dce8;
+    }
+
+    .timer {
+      font-size: 2.0rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      background: #0b1723;
+      padding: 0 16px;
+      border-radius: 30px;
+      color: #b3e4ff;
+      letter-spacing: 1px;
+    }
+
+    .status-msg {
+      background: #1a3343;
+      padding: 4px 16px;
+      border-radius: 30px;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+
+    .eq-panel {
+      background: #0f1e2b;
+      border-radius: 24px;
+      padding: 18px 10px;
+      margin: 6px 0 16px;
+      border: 1px solid #2d4a5e;
+    }
+
+    .eq-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px 14px;
+      flex-wrap: wrap;
+      font-size: 1.6rem;
+      color: #e6f2fa;
+      font-weight: 500;
+      padding: 4px 0;
+    }
+
+    .eq-row span {
+      background: #162b3a;
+      padding: 0 14px;
+      border-radius: 24px;
+      min-width: 44px;
+      text-align: center;
+      border: 1px solid #2f5066;
+    }
+
+    .input-area {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 14px 24px;
+      margin: 14px 0 10px;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f1e2b;
+      padding: 2px 14px 2px 18px;
+      border-radius: 40px;
+      border: 1px solid #2f4a5e;
+    }
+
+    .input-group label {
+      color: #b2d3e8;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .input-group input {
+      background: #162b3a;
+      border: none;
+      padding: 8px 4px;
+      width: 72px;
+      border-radius: 24px;
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-align: center;
+      outline: 1px solid transparent;
+    }
+
+    .input-group input:focus {
+      outline: 1px solid #5a9ec9;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin: 10px 0 8px;
+    }
+
+    .btn {
+      background: #1f465e;
+      border: none;
+      border-bottom: 4px solid #0f2a3b;
+      padding: 12px 28px;
+      border-radius: 40px;
+      font-weight: 700;
+      font-size: 1.0rem;
+      color: #f2fcff;
+      cursor: pointer;
+      transition: 0.06s ease;
+      box-shadow: 0 5px 0 #0b1e2b;
+      flex: 1 0 auto;
+      min-width: 100px;
+    }
+
+    .btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 #0b1e2b;
+    }
+
+    .btn-primary {
+      background: #3a7da8;
+      border-bottom-color: #1d4d6a;
+    }
+
+    .btn-success {
+      background: #2a8266;
+      border-bottom-color: #18523f;
+    }
+
+    .btn-danger {
+      background: #b14f4f;
+      border-bottom-color: #752f2f;
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 #0b1e2b;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: #1a3343;
+      padding: 8px 16px;
+      border-radius: 30px;
+      color: #c7e4f5;
+      text-align: center;
+      font-weight: 500;
+      border-left: 4px solid #4f9bc9;
+      margin: 10px 0 4px;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    .rank-section {
+      background: #0f1e2b;
+      border-radius: 24px;
+      padding: 14px 12px 16px;
+      border: 1px solid #2d4a5e;
+      margin-top: 4px;
+    }
+
+    .rank-header {
+      display: flex;
+      justify-content: space-between;
+      color: #c8e0ef;
+      font-weight: 600;
+      padding: 0 2px 10px 2px;
+      border-bottom: 1px solid #234a5e;
+      font-size: 0.9rem;
+    }
+
+    .rank-list {
+      list-style: none;
+      margin: 8px 0 0 0;
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .rank-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 14px;
+      margin: 3px 0;
+      background: #1a3343;
+      border-radius: 30px;
+      color: #e6f2fa;
+      border-left: 4px solid #3d7a9e;
+      font-weight: 500;
+      font-size: 0.9rem;
+      align-items: center;
+    }
+
+    .rank-list .rank {
+      color: #aacde2;
+      font-weight: 700;
+      margin-right: 10px;
+    }
+
+    .rank-list .time {
+      background: #1d4054;
+      padding: 0 14px;
+      border-radius: 24px;
+      font-weight: 600;
+      color: #b3e4ff;
+      font-size: 0.85rem;
+    }
+
+    .empty {
+      text-align: center;
+      color: #7b9eb3;
+      padding: 20px 0;
+      font-style: italic;
+      justify-content: center !important;
+    }
+
+    .filter-tag {
+      background: #1a3343;
+      padding: 0 12px;
+      border-radius: 24px;
+      font-size: 0.75rem;
+      color: #b3d4e8;
+    }
+
+    .settings {
+      background: #0f1e2b;
+      border-radius: 24px;
+      padding: 20px 16px;
+      border: 1px solid #2d4a5e;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .setting-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 14px;
+      color: #d6eaf5;
+      font-weight: 500;
+    }
+
+    .setting-row label {
+      min-width: 80px;
+      font-size: 0.95rem;
+    }
+
+    .setting-row input,
+    .setting-row select {
+      background: #162b3a;
+      border: 1px solid #2f5066;
+      padding: 8px 14px;
+      border-radius: 24px;
+      color: white;
+      font-size: 0.9rem;
+      outline: none;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .setting-row input:focus,
+    .setting-row select:focus {
+      border-color: #5a9ec9;
+    }
+
+    .setting-row .btn {
+      flex: 0 1 auto;
+      padding: 8px 18px;
+      font-size: 0.85rem;
+    }
+
+    .setting-row .btn-danger {
+      flex: 0 1 auto;
+      padding: 8px 18px;
+      font-size: 0.85rem;
+    }
+
+    .footer {
+      text-align: right;
+      color: #5a7d93;
+      font-size: 0.65rem;
+      margin-top: 10px;
+      opacity: 0.5;
+    }
+
+    .delete-section {
+      margin-top: 10px;
+      padding-top: 16px;
+      border-top: 1px solid #2f4a5e;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    @media (max-width: 500px) {
+      .app {
+        padding: 14px 10px;
+      }
+      .eq-row {
+        font-size: 1.3rem;
+        gap: 4px 8px;
+      }
+      .eq-row span {
+        min-width: 34px;
+        padding: 0 8px;
+      }
+      .input-group input {
+        width: 60px;
+        font-size: 1.0rem;
+      }
+      .btn {
+        font-size: 0.85rem;
+        padding: 10px 16px;
+        min-width: 80px;
+      }
+      .timer {
+        font-size: 1.6rem;
+        padding: 0 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- タブ -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tabChallenge">挑戦</button>
+      <button class="tab-btn" data-tab="tabRanking">ランキング</button>
+      <button class="tab-btn" data-tab="tabSettings">設定</button>
+    </div>
+
+    <!-- 挑戦タブ -->
+    <div id="tabChallenge" class="tab-content active">
+      <div class="status-bar">
+        <span class="timer" id="timerDisplay">0.0</span>
+        <span class="status-msg" id="statusMessage">待機</span>
+      </div>
+
+      <div class="eq-panel">
+        <div class="eq-row">
+          <span id="eq1a">?</span>x + <span id="eq1b">?</span>y = <span id="eq1c">?</span>
+        </div>
+        <div class="eq-row">
+          <span id="eq2a">?</span>x + <span id="eq2b">?</span>y = <span id="eq2c">?</span>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-group">
+          <label>x =</label>
+          <input type="number" id="inputX" step="any" value="0" />
+        </div>
+        <div class="input-group">
+          <label>y =</label>
+          <input type="number" id="inputY" step="any" value="0" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="newGameBtn">挑戦</button>
+        <button class="btn btn-success" id="checkBtn">解答</button>
+      </div>
+
+      <div class="toast" id="toastMessage">挑戦ボタンでスタート</div>
+    </div>
+
+    <!-- ランキングタブ -->
+    <div id="tabRanking" class="tab-content">
+      <div class="rank-section">
+        <div class="rank-header">
+          <span>🏆 ランキング <span class="filter-tag" id="rankFilter">桁数: -</span></span>
+          <span style="font-size:0.8rem; color:#8aacbf;">上位3人</span>
+        </div>
+        <ul class="rank-list" id="rankingList">
+          <li class="empty">読み込み中...</li>
+        </ul>
+        <div class="footer">Firebase Realtime DB · 一人1記録</div>
+      </div>
+    </div>
+
+    <!-- 設定タブ -->
+    <div id="tabSettings" class="tab-content">
+      <div class="settings">
+        <div class="setting-row">
+          <label>ユーザー名</label>
+          <input type="text" id="usernameInput" placeholder="名無し" maxlength="16" />
+          <button class="btn btn-primary" id="saveUsernameBtn" style="flex:0 1 auto; padding:6px 16px;">保存</button>
+        </div>
+        <div class="setting-row">
+          <label>桁数</label>
+          <select id="digitSelect">
+            <option value="1">1桁</option>
+            <option value="2">2桁</option>
+            <option value="3" selected>3桁</option>
+            <option value="4">4桁</option>
+            <option value="5">5桁</option>
+          </select>
+          <span style="color:#8aacbf; font-size:0.85rem; margin-left:4px;">(1〜5桁)</span>
+        </div>
+        <div class="setting-row" style="justify-content:space-between; flex-wrap:wrap; gap:12px;">
+          <span style="color:#7b9eb3; font-size:0.8rem;">※ 同じ名前は使用できません</span>
+          <span style="color:#7b9eb3; font-size:0.8rem;">※ 一人1記録まで</span>
+        </div>
+        <!-- アカウント削除 -->
+        <div class="delete-section">
+          <button class="btn btn-danger" id="deleteAccountBtn" style="min-width:140px;">🗑️ アカウント削除</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // ============================================================
+      //  ★★★ Firebase 設定 (あなたのプロジェクト) ★★★
+      // ============================================================
+      const firebaseConfig = {
+        apiKey: "AIzaSyAqe24qeS_gYtMA_gnF_lYNP70keCQcpnA",
+        authDomain: "renritu-56ae7.firebaseapp.com",
+        databaseURL: "https://renritu-56ae7-default-rtdb.firebaseio.com",
+        projectId: "renritu-56ae7",
+        storageBucket: "renritu-56ae7.firebasestorage.app",
+        messagingSenderId: "327969979771",
+        appId: "1:327969979771:web:709a0fc2a281dc495e91de",
+        measurementId: "G-VFLGB9QXR3"
+      };
+      // ============================================================
+
+      let db = null;
+      let rankingRef = null;
+      try {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.database();
+        rankingRef = db.ref('ranking_v5');
+        console.log('✅ Firebase 接続成功');
+      } catch (e) {
+        console.warn('⚠️ Firebase 初期化エラー → ローカル保存モード', e);
+      }
+
+      // DOM
+      const timerDisplay = document.getElementById('timerDisplay');
+      const statusMsg = document.getElementById('statusMessage');
+      const eq1a = document.getElementById('eq1a');
+      const eq1b = document.getElementById('eq1b');
+      const eq1c = document.getElementById('eq1c');
+      const eq2a = document.getElementById('eq2a');
+      const eq2b = document.getElementById('eq2b');
+      const eq2c = document.getElementById('eq2c');
+      const inputX = document.getElementById('inputX');
+      const inputY = document.getElementById('inputY');
+      const checkBtn = document.getElementById('checkBtn');
+      const newGameBtn = document.getElementById('newGameBtn');
+      const rankingList = document.getElementById('rankingList');
+      const toast = document.getElementById('toastMessage');
+      const usernameInput = document.getElementById('usernameInput');
+      const saveUsernameBtn = document.getElementById('saveUsernameBtn');
+      const digitSelect = document.getElementById('digitSelect');
+      const rankFilter = document.getElementById('rankFilter');
+      const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+
+      // タブ
+      const tabs = document.querySelectorAll('.tab-btn');
+      const contents = {
+        challenge: document.getElementById('tabChallenge'),
+        ranking: document.getElementById('tabRanking'),
+        settings: document.getElementById('tabSettings')
+      };
+
+      // ---------- Cookie 操作 ----------
+      function setCookie(name, value, days = 365) {
+        const d = new Date();
+        d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
+        document.cookie = `${name}=${encodeURIComponent(value)}; expires=${d.toUTCString()}; path=/; SameSite=Lax`;
+      }
+
+      function getCookie(name) {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? decodeURIComponent(match[2]) : null;
+      }
+
+      function deleteCookie(name) {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+      }
+
+      // ---------- 状態 ----------
+      let currentEq = { a1: 0, b1: 0, c1: 0, a2: 0, b2: 0, c2: 0, solutionX: 0, solutionY: 0 };
+      let timerInterval = null;
+      let startTime = null;
+      let elapsedSeconds = 0;
+      let isGameActive = false;
+      let isSolved = false;
+      let rankingData = [];
+      let currentUsername = '';
+      let allEntries = {}; // Firebaseからの全エントリ（キーと値）
+
+      // ---------- 設定 ----------
+      function getDigit() { return parseInt(digitSelect.value, 10); }
+
+      function getUsername() { return usernameInput.value.trim() || '名無し'; }
+
+      // ---------- 問題生成 (桁数指定) ----------
+      function generateEquation() {
+        const digit = getDigit();
+        const maxVal = Math.pow(10, digit) - 1;
+        const minVal = digit === 1 ? -9 : -(maxVal);
+
+        let x, y, a1, b1, c1, a2, b2, c2;
+        let attempts = 0;
+        do {
+          x = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+          y = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+          a1 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+          b1 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+          a2 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+          b2 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+          c1 = a1 * x + b1 * y;
+          c2 = a2 * x + b2 * y;
+          attempts++;
+        } while ((a1 === 0 && b1 === 0) || (a2 === 0 && b2 === 0) ||
+          (a1 === a2 && b1 === b2 && c1 === c2) || attempts < 20 ||
+          Math.abs(c1) > 1000000 || Math.abs(c2) > 1000000);
+
+        return { a1, b1, c1, a2, b2, c2, solutionX: x, solutionY: y };
+      }
+
+      function displayEquation(eq) {
+        eq1a.textContent = eq.a1;
+        eq1b.textContent = eq.b1;
+        eq1c.textContent = eq.c1;
+        eq2a.textContent = eq.a2;
+        eq2b.textContent = eq.b2;
+        eq2c.textContent = eq.c2;
+      }
+
+      // ---------- タイマー ----------
+      function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        startTime = Date.now() - elapsedSeconds * 1000;
+        timerInterval = setInterval(() => {
+          elapsedSeconds = (Date.now() - startTime) / 1000;
+          timerDisplay.textContent = elapsedSeconds.toFixed(1);
+        }, 100);
+      }
+
+      function stopTimer() {
+        if (timerInterval) { clearInterval(timerInterval);
+          timerInterval = null; }
+      }
+
+      function resetTimer() {
+        stopTimer();
+        elapsedSeconds = 0;
+        timerDisplay.textContent = '0.0';
+      }
+
+      // ---------- ゲーム ----------
+      function newGame() {
+        stopTimer();
+        resetTimer();
+        const eq = generateEquation();
+        currentEq = eq;
+        displayEquation(eq);
+        inputX.value = 0;
+        inputY.value = 0;
+        isSolved = false;
+        isGameActive = true;
+        statusMsg.textContent = '解答中';
+        statusMsg.style.color = '#b3d9f0';
+        checkBtn.disabled = false;
+        toastMessage('スタート！');
+        startTimer();
+      }
+
+      function checkAnswer() {
+        if (!isGameActive || isSolved) {
+          toastMessage('問題がありません');
+          return;
+        }
+        const x = parseFloat(inputX.value);
+        const y = parseFloat(inputY.value);
+        if (isNaN(x) || isNaN(y)) {
+          toastMessage('数値を入力');
+          return;
+        }
+        const eps = 0.001;
+        const eq = currentEq;
+        const ok1 = Math.abs(eq.a1 * x + eq.b1 * y - eq.c1) < eps;
+        const ok2 = Math.abs(eq.a2 * x + eq.b2 * y - eq.c2) < eps;
+
+        if (ok1 && ok2) {
+          isSolved = true;
+          isGameActive = false;
+          stopTimer();
+          const finalTime = parseFloat(timerDisplay.textContent);
+          statusMsg.textContent = `正解！ ${finalTime.toFixed(1)}s`;
+          statusMsg.style.color = '#8bdaa0';
+          checkBtn.disabled = true;
+          toastMessage(`正解！ ${finalTime.toFixed(1)}秒`);
+
+          const name = getUsername();
+          const digit = getDigit();
+
+          // 同名チェック (ランキングに同名が存在するか)
+          const existing = rankingData.find(r => r.username === name);
+          if (existing) {
+            toastMessage(`「${name}」は既に使用されています`);
+            return;
+          }
+
+          // 自分がすでに記録を持っているかチェック (一人1記録)
+          const myEntry = rankingData.find(r => r.username === name);
+          if (myEntry) {
+            toastMessage(`「${name}」は既に記録があります (一人1記録)`);
+            return;
+          }
+
+          const entry = {
+            username: name,
+            time: Math.round(finalTime * 10) / 10,
+            digit: digit,
+            timestamp: Date.now()
+          };
+          saveRanking(entry);
+        } else {
+          toastMessage('不正解');
+          statusMsg.textContent = '不正解';
+          statusMsg.style.color = '#f5a3a3';
+        }
+      }
+
+      // ---------- ランキング (上位3人) ----------
+      function saveRanking(entry) {
+        if (rankingRef) {
+          rankingRef.push(entry).catch(() => saveLocal(entry));
+        } else {
+          saveLocal(entry);
+        }
+        // ローカルキャッシュ更新
+        rankingData.push(entry);
+        rankingData.sort((a, b) => a.time - b.time);
+        rankingData = rankingData.slice(0, 3);
+        renderRanking();
+      }
+
+      function saveLocal(entry) {
+        rankingData.push(entry);
+        rankingData.sort((a, b) => a.time - b.time);
+        rankingData = rankingData.slice(0, 3);
+        localStorage.setItem('rank_v5', JSON.stringify(rankingData));
+        renderRanking();
+      }
+
+      function loadRanking() {
+        if (rankingRef) {
+          rankingRef.orderByChild('time').limitToFirst(3).on('value', (snap) => {
+            const data = snap.val();
+            allEntries = data || {};
+            if (data) {
+              const list = Object.values(data);
+              list.sort((a, b) => a.time - b.time);
+              rankingData = list.slice(0, 3);
+            } else {
+              rankingData = [];
+            }
+            renderRanking();
+          }, () => loadLocal());
+        } else {
+          loadLocal();
+        }
+      }
+
+      function loadLocal() {
+        try {
+          const stored = localStorage.getItem('rank_v5');
+          rankingData = stored ? JSON.parse(stored) : [];
+          rankingData.sort((a, b) => a.time - b.time);
+          rankingData = rankingData.slice(0, 3);
+        } catch (e) { rankingData = []; }
+        renderRanking();
+      }
+
+      function renderRanking() {
+        rankingList.innerHTML = '';
+        const digit = getDigit();
+        rankFilter.textContent = `桁数: ${digit}`;
+
+        if (!rankingData || rankingData.length === 0) {
+          rankingList.innerHTML = '<li class="empty">記録なし</li>';
+          return;
+        }
+        rankingData.forEach((item, i) => {
+          const li = document.createElement('li');
+          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
+          li.innerHTML = `
+            <span><span class="rank">${medal}</span> ${item.username} (${item.digit}桁)</span>
+            <span class="time">${item.time}s</span>
+          `;
+          rankingList.appendChild(li);
+        });
+      }
+
+      // ---------- アカウント削除 ----------
+      function deleteAccount() {
+        const name = getUsername();
+        if (!name || name === '名無し') {
+          toastMessage('先にユーザー名を設定してください');
+          return;
+        }
+
+        // 自分がランキングにいるか確認
+        const myEntry = rankingData.find(r => r.username === name);
+        if (!myEntry) {
+          toastMessage(`「${name}」の記録は見つかりません`);
+          return;
+        }
+
+        if (!confirm(`「${name}」のアカウントと全ての記録を削除しますか？`)) {
+          return;
+        }
+
+        // Firebaseから該当ユーザーの全エントリを削除
+        if (rankingRef) {
+          // まず全データを取得して該当ユーザーを探す
+          rankingRef.once('value', (snap) => {
+            const data = snap.val();
+            if (!data) {
+              toastMessage('削除するデータがありません');
+              return;
+            }
+            const updates = {};
+            let found = false;
+            Object.keys(data).forEach(key => {
+              if (data[key].username === name) {
+                updates[key] = null;
+                found = true;
+              }
+            });
+            if (!found) {
+              toastMessage(`「${name}」の記録は見つかりません`);
+              return;
+            }
+            rankingRef.update(updates).then(() => {
+              // ローカルからも削除
+              rankingData = rankingData.filter(r => r.username !== name);
+              localStorage.setItem('rank_v5', JSON.stringify(rankingData));
+              // Cookie削除
+              deleteCookie('eq_username');
+              usernameInput.value = '';
+              currentUsername = '';
+              toastMessage(`「${name}」のアカウントと記録を削除しました`);
+              renderRanking();
+            }).catch((err) => {
+              console.error('削除エラー:', err);
+              toastMessage('削除に失敗しました');
+            });
+          }).catch((err) => {
+            console.error('データ取得エラー:', err);
+            toastMessage('データ取得に失敗しました');
+          });
+        } else {
+          // ローカルモード
+          rankingData = rankingData.filter(r => r.username !== name);
+          localStorage.setItem('rank_v5', JSON.stringify(rankingData));
+          deleteCookie('eq_username');
+          usernameInput.value = '';
+          currentUsername = '';
+          toastMessage(`「${name}」のアカウントと記録を削除しました (ローカル)`);
+          renderRanking();
+        }
+      }
+
+      // ---------- トースト ----------
+      function toastMessage(msg) {
+        toast.textContent = msg;
+        setTimeout(() => {
+          if (toast.textContent === msg) {
+            toast.textContent = '挑戦ボタンでスタート';
+          }
+        }, 3000);
+      }
+
+      // ---------- タブ切り替え ----------
+      tabs.forEach(btn => {
+        btn.addEventListener('click', () => {
+          tabs.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          Object.keys(contents).forEach(key => {
+            const el = contents[key];
+            const id = `tab${key.charAt(0).toUpperCase() + key.slice(1)}`;
+            el.classList.toggle('active', id === btn.dataset.tab);
+          });
+        });
+      });
+
+      // ---------- ユーザー名 (Cookie & 重複チェック) ----------
+      function loadUsernameFromCookie() {
+        const saved = getCookie('eq_username');
+        if (saved) {
+          usernameInput.value = saved;
+          currentUsername = saved;
+        }
+      }
+
+      saveUsernameBtn.addEventListener('click', () => {
+        const name = usernameInput.value.trim();
+        if (!name) {
+          toastMessage('名前を入力してください');
+          return;
+        }
+        // 同名チェック (ランキングに同名が存在するか)
+        const exists = rankingData.some(r => r.username === name);
+        if (exists) {
+          toastMessage(`「${name}」は既に使用されています`);
+          return;
+        }
+        setCookie('eq_username', name);
+        currentUsername = name;
+        toastMessage(`ユーザー名: ${name} を保存`);
+      });
+
+      // ---------- 初期化 ----------
+      function init() {
+        loadUsernameFromCookie();
+        loadRanking();
+        isGameActive = false;
+        isSolved = false;
+        checkBtn.disabled = true;
+        statusMsg.textContent = '待機';
+        resetTimer();
+
+        checkBtn.addEventListener('click', checkAnswer);
+        newGameBtn.addEventListener('click', newGame);
+        deleteAccountBtn.addEventListener('click', deleteAccount);
+
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && (document.activeElement === inputX || document.activeElement === inputY)) {
+            checkAnswer();
+          }
+        });
+
+        digitSelect.addEventListener('change', () => {
+          toastMessage(`桁数を ${digitSelect.value} に変更`);
+          renderRanking();
+        });
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
