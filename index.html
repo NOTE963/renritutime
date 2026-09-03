@@ -1055,6 +1055,8 @@
       let battleOppSolved = false;
       let battleWaitingForMatch = false;
       let battleIsMatched = false;
+      let matchRetryCount = 0;
+      let matchTimeout = null;
 
       // ============================================================
       //  設定
@@ -1336,6 +1338,11 @@
         if (battleWaitingForMatch) {
           battleWaitingForMatch = false;
           battleStopMatchBtn.style.display = 'none';
+          if (matchTimeout) {
+            clearTimeout(matchTimeout);
+            matchTimeout = null;
+          }
+          matchRetryCount = 0;
           battleToastMsg('マッチングを停止しました');
         }
       }
@@ -1370,7 +1377,6 @@
           });
       }
 
-      // ルーム作成
       function createBattleRoom() {
         if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
         const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -1406,7 +1412,6 @@
         }
       }
 
-      // ルーム参加
       function joinBattleRoom() {
         if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
         const roomId = roomIdInput.value.trim().toUpperCase();
@@ -1445,67 +1450,125 @@
         }
       }
 
-      // ランダムマッチング - 修正: ルームが存在しない場合は作成しない
+      // ランダムマッチング - リトライ機能付き（最大10回まで）
       function randomMatch() {
         if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
         if (battleWaitingForMatch) return;
+
         battleWaitingForMatch = true;
+        matchRetryCount = 0;
         battleStopMatchBtn.style.display = 'inline-block';
-        battleToastMsg('マッチング中...');
+        battleToastMsg('マッチング中... (リトライ ' + (matchRetryCount + 1) + '/10)');
+
+        doRandomMatchSearch();
+      }
+
+      function doRandomMatchSearch() {
+        if (!battleWaitingForMatch) {
+          battleStopMatchBtn.style.display = 'none';
+          return;
+        }
+
         const username = getUsername();
 
         // 待機中のルームを検索
-        battleRef.orderByChild('status').equalTo('waiting').limitToFirst(1).once('value')
+        battleRef.orderByChild('status').equalTo('waiting').limitToFirst(5).once('value')
           .then((snap) => {
             if (!battleWaitingForMatch) {
               battleStopMatchBtn.style.display = 'none';
               return;
             }
+
             const data = snap.val();
             let found = false;
+            let matchedRoomKey = null;
+
             if (data) {
               const keys = Object.keys(data);
-              for (let key of keys) {
+              // ランダムにシャッフルして、自分の入っていないルームを探す
+              const shuffledKeys = keys.sort(() => Math.random() - 0.5);
+              for (let key of shuffledKeys) {
                 const room = data[key];
                 const players = room.players || {};
                 const usernames = Object.keys(players);
-                // 自分が入っていない、かつ2人未満のルームを探す
                 if (!players[username] && usernames.length < 2) {
-                  const updates = {};
-                  updates[`players/${username}`] = { ready: false, score: 0, solved: false };
-                  return battleRef.child(key).update(updates)
-                    .then(() => {
-                      if (!battleWaitingForMatch) {
-                        battleStopMatchBtn.style.display = 'none';
-                        return;
-                      }
-                      battleRoomId = key;
-                      roomIdInput.value = key;
-                      roomStatus.textContent = `参加: ${key}`;
-                      battleToastMsg('マッチング成功！');
-                      battleWaitingForMatch = false;
-                      battleStopMatchBtn.style.display = 'none';
-                      battleIsMatched = false;
-                      updateBattleAreas();
-                      listenBattleRoom(key);
-                      found = true;
-                    });
+                  matchedRoomKey = key;
+                  break;
                 }
               }
             }
 
-            // 待機中のルームが見つからなかった場合 - ルームを作成せずエラーメッセージ
-            if (!found && battleWaitingForMatch) {
-              battleWaitingForMatch = false;
-              battleStopMatchBtn.style.display = 'none';
-              battleToastMsg('現在マッチングできる相手がいません。後でもう一度試すか、ルームを作成してください');
+            if (matchedRoomKey) {
+              // ルームに参加
+              const updates = {};
+              updates[`players/${username}`] = { ready: false, score: 0, solved: false };
+              return battleRef.child(matchedRoomKey).update(updates)
+                .then(() => {
+                  if (!battleWaitingForMatch) {
+                    battleStopMatchBtn.style.display = 'none';
+                    return;
+                  }
+                  battleRoomId = matchedRoomKey;
+                  roomIdInput.value = matchedRoomKey;
+                  roomStatus.textContent = `参加: ${matchedRoomKey}`;
+                  battleToastMsg('マッチング成功！');
+                  battleWaitingForMatch = false;
+                  battleStopMatchBtn.style.display = 'none';
+                  battleIsMatched = false;
+                  matchRetryCount = 0;
+                  if (matchTimeout) {
+                    clearTimeout(matchTimeout);
+                    matchTimeout = null;
+                  }
+                  updateBattleAreas();
+                  listenBattleRoom(matchedRoomKey);
+                });
+            } else {
+              // 見つからなかった場合はリトライ
+              matchRetryCount++;
+              if (matchRetryCount >= 10) {
+                battleWaitingForMatch = false;
+                battleStopMatchBtn.style.display = 'none';
+                battleToastMsg('マッチングできる相手が見つかりませんでした。後でもう一度試すか、ルームを作成してください');
+                if (matchTimeout) {
+                  clearTimeout(matchTimeout);
+                  matchTimeout = null;
+                }
+                return;
+              }
+
+              battleToastMsg('マッチング中... (リトライ ' + (matchRetryCount + 1) + '/10)');
+
+              // 1.5秒後に再試行
+              if (matchTimeout) clearTimeout(matchTimeout);
+              matchTimeout = setTimeout(() => {
+                if (battleWaitingForMatch) {
+                  doRandomMatchSearch();
+                }
+              }, 1500);
             }
           })
           .catch((err) => {
             console.error('マッチングエラー:', err);
-            battleToastMsg('マッチングエラー: ' + err.message);
-            battleWaitingForMatch = false;
-            battleStopMatchBtn.style.display = 'none';
+            // エラーの場合はリトライ
+            matchRetryCount++;
+            if (matchRetryCount < 10) {
+              battleToastMsg('マッチング中... (リトライ ' + (matchRetryCount + 1) + '/10)');
+              if (matchTimeout) clearTimeout(matchTimeout);
+              matchTimeout = setTimeout(() => {
+                if (battleWaitingForMatch) {
+                  doRandomMatchSearch();
+                }
+              }, 1500);
+            } else {
+              battleWaitingForMatch = false;
+              battleStopMatchBtn.style.display = 'none';
+              battleToastMsg('マッチングエラー: ' + err.message);
+              if (matchTimeout) {
+                clearTimeout(matchTimeout);
+                matchTimeout = null;
+              }
+            }
           });
       }
 
@@ -1714,6 +1777,11 @@
         battleWaitingForMatch = false;
         battleIsMatched = false;
         battleStopMatchBtn.style.display = 'none';
+        if (matchTimeout) {
+          clearTimeout(matchTimeout);
+          matchTimeout = null;
+        }
+        matchRetryCount = 0;
         roomStatus.textContent = '-';
         opponentNameDisplay.textContent = '待機中';
         battleResult.style.display = 'none';
