@@ -150,83 +150,68 @@
       margin-top: 8px;
     }
 
-    /* ===== ルーム管理エリア（グループ=ルーム） ===== */
-    .room-manage-area {
+    /* ===== 自分が作成したルーム一覧 ===== */
+    .my-rooms-area {
       background: #0f1e2b;
       border-radius: 24px;
       padding: 16px;
       margin-top: 12px;
       border: 1px solid #2d4a5e;
     }
-    .room-manage-area h4 {
+    .my-rooms-area h4 {
       color: #c8e0ef;
       font-size: 0.9rem;
       margin-bottom: 10px;
     }
-    .room-manage-area .row {
+    .my-rooms-list {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    .my-room-item {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      margin-bottom: 6px;
-    }
-    .room-manage-area .row label {
-      color: #8aacbf;
-      font-size: 0.8rem;
-      min-width: 100px;
-    }
-    .room-manage-area .row input {
-      background: #162b3a;
-      border: 1px solid #2f5066;
-      padding: 6px 12px;
+      background: #1a3343;
+      padding: 8px 14px;
       border-radius: 20px;
-      color: white;
+      color: #e6f2fa;
       font-size: 0.85rem;
-      outline: none;
-      flex: 1;
-      min-width: 120px;
     }
-    .room-manage-area .row input:focus {
-      border-color: #5a9ec9;
+    .my-room-item .room-name {
+      font-weight: 600;
+      color: #b3d4e8;
     }
-    .room-manage-area .btn-danger {
+    .my-room-item .room-status {
+      color: #8aacbf;
+      font-size: 0.75rem;
+    }
+    .my-room-item .btn {
+      flex: 0 1 auto;
+      padding: 4px 14px;
+      min-width: auto;
+      font-size: 0.75rem;
       background: #b14f4f;
       border-bottom-color: #752f2f;
     }
-    .room-manage-area .btn-success {
-      background: #2a8266;
-      border-bottom-color: #18523f;
+    .my-room-item .btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #0b1e2b;
     }
-    .room-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 8px;
-    }
-    .room-tag {
-      background: #1a3343;
-      padding: 4px 14px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      color: #b3d4e8;
-      border: 1px solid #2f5066;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .room-tag .del-btn {
-      cursor: pointer;
-      color: #f5a3a3;
-      font-weight: bold;
-      font-size: 1rem;
-    }
-    .room-tag .del-btn:hover {
-      color: #ff6b6b;
-    }
-    .room-status-text {
+    .my-rooms-empty {
       color: #7b9eb3;
+      font-size: 0.8rem;
+      text-align: center;
+      padding: 12px 0;
+      font-style: italic;
+    }
+    .my-rooms-limit {
+      color: #f5a3a3;
       font-size: 0.75rem;
-      margin-top: 8px;
+      text-align: center;
+      margin-top: 6px;
     }
 
     /* ===== 既存のスタイル ===== */
@@ -1074,18 +1059,6 @@
           <button class="btn btn-danger" id="deleteAccountBtn" style="min-width:140px;">アカウント削除</button>
         </div>
 
-        <!-- ルーム管理エリア（グループ=ルーム） -->
-        <div class="room-manage-area">
-          <h4>📁 ルーム管理（最大3つまで作成可能）</h4>
-          <div class="row">
-            <label>ルーム名</label>
-            <input type="text" id="roomNameInput" placeholder="ルーム名を入力" maxlength="20" />
-            <button class="btn btn-success" id="createRoomBtn" style="flex:0 1 auto; padding:6px 14px;">作成</button>
-          </div>
-          <div class="room-list" id="roomList"></div>
-          <div class="room-status-text" id="roomStatusText">ルームは作成されていません</div>
-        </div>
-
         <!-- 引き継ぎエリア -->
         <div class="data-transfer-area">
           <h4>📦 データの引き継ぎ</h4>
@@ -1112,6 +1085,15 @@
           </div>
           <div class="room-delete-status" id="roomDeleteStatus">⚠️ パスワード: dxpky9</div>
         </div>
+
+        <!-- 自分の作成ルーム一覧 -->
+        <div class="my-rooms-area">
+          <h4>📁 作成したルーム（最大3つ）</h4>
+          <div class="my-rooms-list" id="myRoomsList">
+            <div class="my-rooms-empty">読み込み中...</div>
+          </div>
+          <div class="my-rooms-limit" id="myRoomsLimit"></div>
+        </div>
       </div>
 
       <div class="memo-section">
@@ -1128,127 +1110,6 @@
   </div>
 
   <script>
-    // ============================================================
-    //  ルーム管理機能（グループ=ルーム）
-    // ============================================================
-    (function() {
-      const MAX_ROOMS = 3;
-      const ROOMS_KEY = 'user_rooms';
-
-      // ルームデータを取得
-      function getRooms() {
-        try {
-          const data = localStorage.getItem(ROOMS_KEY);
-          return data ? JSON.parse(data) : [];
-        } catch (e) {
-          return [];
-        }
-      }
-
-      // ルームデータを保存
-      function saveRooms(rooms) {
-        localStorage.setItem(ROOMS_KEY, JSON.stringify(rooms));
-        renderRooms();
-        updateRoomStatus(rooms);
-      }
-
-      // ルーム一覧を表示
-      function renderRooms() {
-        const container = document.getElementById('roomList');
-        const rooms = getRooms();
-        container.innerHTML = '';
-        if (rooms.length === 0) {
-          container.innerHTML = '<span style="color:#5a7d93; font-size:0.8rem;">ルームがありません</span>';
-          return;
-        }
-        rooms.forEach((room, index) => {
-          const tag = document.createElement('span');
-          tag.className = 'room-tag';
-          tag.innerHTML = `
-            ${room}
-            <span class="del-btn" data-index="${index}">✕</span>
-          `;
-          container.appendChild(tag);
-        });
-
-        // 削除ボタンのイベント
-        container.querySelectorAll('.del-btn').forEach(el => {
-          el.addEventListener('click', function() {
-            const index = parseInt(this.dataset.index);
-            deleteRoom(index);
-          });
-        });
-      }
-
-      // ルームの状態を更新
-      function updateRoomStatus(rooms) {
-        const statusEl = document.getElementById('roomStatusText');
-        const count = rooms ? rooms.length : getRooms().length;
-        statusEl.textContent = `ルーム: ${count}/${MAX_ROOMS} 作成済み`;
-        statusEl.style.color = count >= MAX_ROOMS ? '#f5a3a3' : '#7b9eb3';
-      }
-
-      // ルームを作成
-      function createRoom() {
-        const input = document.getElementById('roomNameInput');
-        const name = input.value.trim();
-        if (!name) {
-          document.getElementById('roomStatusText').textContent = '⚠️ ルーム名を入力してください';
-          document.getElementById('roomStatusText').style.color = '#f5a3a3';
-          return;
-        }
-
-        const rooms = getRooms();
-        if (rooms.length >= MAX_ROOMS) {
-          document.getElementById('roomStatusText').textContent = `⚠️ ルームは最大${MAX_ROOMS}つまでです`;
-          document.getElementById('roomStatusText').style.color = '#f5a3a3';
-          return;
-        }
-
-        if (rooms.includes(name)) {
-          document.getElementById('roomStatusText').textContent = '⚠️ 同じ名前のルームが既に存在します';
-          document.getElementById('roomStatusText').style.color = '#f5a3a3';
-          return;
-        }
-
-        rooms.push(name);
-        saveRooms(rooms);
-        input.value = '';
-        document.getElementById('roomStatusText').textContent = `✅ ルーム「${name}」を作成しました`;
-        document.getElementById('roomStatusText').style.color = '#7bc9a0';
-      }
-
-      // ルームを削除
-      function deleteRoom(index) {
-        const rooms = getRooms();
-        const name = rooms[index];
-        if (!confirm(`ルーム「${name}」を削除しますか？`)) return;
-        rooms.splice(index, 1);
-        saveRooms(rooms);
-        document.getElementById('roomStatusText').textContent = `✅ ルーム「${name}」を削除しました`;
-        document.getElementById('roomStatusText').style.color = '#7bc9a0';
-      }
-
-      // Enterキーで作成
-      document.getElementById('roomNameInput').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-          document.getElementById('createRoomBtn').click();
-        }
-      });
-
-      // 初期化
-      renderRooms();
-      updateRoomStatus();
-
-      // グローバルに公開
-      window.getRooms = getRooms;
-      window.saveRooms = saveRooms;
-      window.renderRooms = renderRooms;
-      window.updateRoomStatus = updateRoomStatus;
-
-      document.getElementById('createRoomBtn').addEventListener('click', createRoom);
-    })();
-
     // ============================================================
     //  ルーム全削除機能
     // ============================================================
@@ -1289,11 +1150,13 @@
 
             const keys = Object.keys(data);
             const promises = keys.map(key => window.battleRef.child(key).remove());
-            return Promise.all(promises);
+            return Promise.all(promises).then(() => keys.length);
           })
-          .then(() => {
-            statusEl.textContent = `✅ ${Object.keys(data || {}).length}件のルームを全て削除しました`;
+          .then((count) => {
+            statusEl.textContent = `✅ ${count || 0}件のルームを全て削除しました`;
             statusEl.style.color = '#7bc9a0';
+            // ルームリスト更新
+            loadMyRooms();
             // 現在のルーム状態をリセット
             if (window.battleRoomId) {
               window.battleRoomId = null;
@@ -1304,15 +1167,22 @@
               window.battleOppScore = 0;
               window.battleOpponentName = '';
               window.battleIsMatched = false;
-              document.getElementById('battleMatchArea').style.display = 'none';
-              document.getElementById('battleQuestionArea').style.display = 'none';
-              document.getElementById('battleContinueArea').style.display = 'none';
-              document.getElementById('roomStatus').textContent = '-';
-              document.getElementById('opponentNameDisplay').textContent = '待機中';
-              document.getElementById('playerList').innerHTML = '';
-              document.getElementById('battleResult').style.display = 'none';
-              document.getElementById('battleResult').textContent = '';
-              if (typeof updateBattleUI === 'function') updateBattleUI();
+              const matchArea = document.getElementById('battleMatchArea');
+              const questionArea = document.getElementById('battleQuestionArea');
+              const continueArea = document.getElementById('battleContinueArea');
+              const roomStatusEl = document.getElementById('roomStatus');
+              const opponentDisplay = document.getElementById('opponentNameDisplay');
+              const playerList = document.getElementById('playerList');
+              const result = document.getElementById('battleResult');
+              if (matchArea) matchArea.style.display = 'none';
+              if (questionArea) questionArea.style.display = 'none';
+              if (continueArea) continueArea.style.display = 'none';
+              if (roomStatusEl) roomStatusEl.textContent = '-';
+              if (opponentDisplay) opponentDisplay.textContent = '待機中';
+              if (playerList) playerList.innerHTML = '';
+              if (result) { result.style.display = 'none';
+                result.textContent = ''; }
+              updateBattleUI();
             }
           })
           .catch((err) => {
@@ -1322,12 +1192,112 @@
           });
       });
 
+      // Enterキーで削除実行
       document.getElementById('deletePassword').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
           document.getElementById('deleteAllRoomsBtn').click();
         }
       });
     })();
+
+    // ============================================================
+    //  自分の作成ルーム一覧 & 削除機能
+    // ============================================================
+    function loadMyRooms() {
+      const listEl = document.getElementById('myRoomsList');
+      const limitEl = document.getElementById('myRoomsLimit');
+      const username = document.getElementById('usernameInput').value.trim() || '名無し';
+
+      if (!window.battleRef) {
+        listEl.innerHTML = '<div class="my-rooms-empty">Firebaseに接続されていません</div>';
+        return;
+      }
+
+      window.battleRef.once('value')
+        .then((snap) => {
+          const data = snap.val();
+          const myRooms = [];
+          if (data) {
+            Object.keys(data).forEach(key => {
+              const room = data[key];
+              if (room.creator === username) {
+                myRooms.push({
+                  id: key,
+                  status: room.status || 'waiting',
+                  players: room.players ? Object.keys(room.players).length : 0,
+                  maxPlayers: room.maxPlayers || 4,
+                  timestamp: room.timestamp || 0
+                });
+              }
+            });
+          }
+
+          // 作成日時順にソート（新しい順）
+          myRooms.sort((a, b) => b.timestamp - a.timestamp);
+
+          if (myRooms.length === 0) {
+            listEl.innerHTML = '<div class="my-rooms-empty">作成したルームはありません</div>';
+            limitEl.textContent = `0 / 3`;
+            return;
+          }
+
+          limitEl.textContent = `${myRooms.length} / 3`;
+
+          listEl.innerHTML = '';
+          myRooms.forEach(room => {
+            const item = document.createElement('div');
+            item.className = 'my-room-item';
+            const statusText = room.status === 'waiting' ? '待機中' :
+              room.status === 'voting' ? '投票中' :
+              room.status === 'playing' ? '対戦中' :
+              room.status === 'finished' ? '終了' : room.status;
+            item.innerHTML = `
+              <span class="room-name">${room.id}</span>
+              <span class="room-status">${statusText} (${room.players}/${room.maxPlayers}人)</span>
+              <button class="btn btn-danger" data-roomid="${room.id}">削除</button>
+            `;
+            listEl.appendChild(item);
+
+            // 削除ボタン
+            const deleteBtn = item.querySelector('.btn');
+            deleteBtn.addEventListener('click', function(e) {
+              e.stopPropagation();
+              const roomId = this.dataset.roomid;
+              if (!confirm(`ルーム「${roomId}」を削除しますか？`)) return;
+              window.battleRef.child(roomId).remove()
+                .then(() => {
+                  // 現在のルームが削除された場合
+                  if (window.battleRoomId === roomId) {
+                    window.battleRoomId = null;
+                    window.battleIsReady = false;
+                    window.battleIsPlaying = false;
+                    window.battleIsFinished = false;
+                    const matchArea = document.getElementById('battleMatchArea');
+                    const questionArea = document.getElementById('battleQuestionArea');
+                    if (matchArea) matchArea.style.display = 'none';
+                    if (questionArea) questionArea.style.display = 'none';
+                    document.getElementById('roomStatus').textContent = '-';
+                    document.getElementById('opponentNameDisplay').textContent = '待機中';
+                    document.getElementById('playerList').innerHTML = '';
+                    document.getElementById('battleResult').style.display = 'none';
+                    document.getElementById('battleResult').textContent = '';
+                    document.getElementById('battleContinueArea').style.display = 'none';
+                    updateBattleUI();
+                  }
+                  loadMyRooms();
+                  toastMessage(`ルーム「${roomId}」を削除しました`);
+                })
+                .catch((err) => {
+                  toastMessage('ルーム削除に失敗しました: ' + err.message);
+                });
+            });
+          });
+        })
+        .catch((err) => {
+          listEl.innerHTML = '<div class="my-rooms-empty">読み込みエラー</div>';
+          console.error('ルーム一覧読み込みエラー:', err);
+        });
+    }
 
     // ============================================================
     //  PWA インストール
@@ -1381,7 +1351,6 @@
             name_locked: localStorage.getItem('eq_name_locked') || '',
             memo: localStorage.getItem('memo_data') || '',
             ranking: localStorage.getItem('rank_v5_all') || '',
-            rooms: localStorage.getItem('user_rooms') || '[]',
             version: '1.0'
           };
           const json = JSON.stringify(data);
@@ -1431,10 +1400,6 @@
             localStorage.setItem('rank_v5_all', data.ranking);
             restored++;
           }
-          if (data.rooms) {
-            localStorage.setItem('user_rooms', data.rooms);
-            restored++;
-          }
           if (data.username) {
             const nameLocked = localStorage.getItem('eq_name_locked') === 'true';
             if (nameLocked) {
@@ -1457,17 +1422,6 @@
                 if (memoData[i] !== undefined) {
                   memoTexts[i].value = memoData[i];
                 }
-              }
-            } catch (e) {}
-          }
-          if (data.rooms) {
-            try {
-              const rooms = JSON.parse(data.rooms);
-              if (typeof window.renderRooms === 'function') {
-                window.renderRooms();
-              }
-              if (typeof window.updateRoomStatus === 'function') {
-                window.updateRoomStatus(rooms);
               }
             } catch (e) {}
           }
@@ -1524,6 +1478,9 @@
       } catch (e) {
         console.warn('Firebase 初期化エラー', e);
       }
+
+      // 最大作成ルーム数
+      const MAX_CREATED_ROOMS = 3;
 
       // ============================================================
       //  サウンド
@@ -1701,6 +1658,10 @@
           tabContents[tabId].classList.add('active');
         }
         saveAllMemo();
+        // 設定タブが開かれたらルーム一覧更新
+        if (tabId === 'tabSettings') {
+          loadMyRooms();
+        }
       }
 
       tabBtns.forEach(btn => {
@@ -1805,7 +1766,7 @@
       let continuePressed = {};
       let isContinueMode = false;
 
-      // グローバル変数に同期
+      // グローバルに公開
       window.battleRoomId = battleRoomId;
       window.battleIsReady = battleIsReady;
       window.battleIsPlaying = battleIsPlaying;
@@ -2117,15 +2078,6 @@
         if (battleOpponentName) opponentNameDisplay.textContent = battleOpponentName;
         battleReadyBtn.textContent = battleIsReady ? '準備完了' : '準備OK';
         battleReadyBtn.disabled = battleIsReady || battleIsPlaying || battleIsFinished;
-        // グローバル同期
-        window.battleYourScore = battleYourScore;
-        window.battleOppScore = battleOppScore;
-        window.battleOpponentName = battleOpponentName;
-        window.battleIsReady = battleIsReady;
-        window.battleIsPlaying = battleIsPlaying;
-        window.battleIsFinished = battleIsFinished;
-        window.battleRoomId = battleRoomId;
-        window.battleIsMatched = battleIsMatched;
       }
 
       function showBattleResult(msg) {
@@ -2239,8 +2191,6 @@
             battleContinueArea.style.display = 'flex';
             continuePressed = {};
             updateContinueStatus(usernames);
-            // グローバル同期
-            window.battleIsFinished = battleIsFinished;
             return;
           }
 
@@ -2310,6 +2260,7 @@
               battleRef.child(roomId).remove()
                 .then(() => {
                   console.log('🗑️ ルームを削除しました:', roomId);
+                  loadMyRooms();
                 })
                 .catch((err) => {
                   console.warn('ルーム削除エラー:', err);
@@ -2375,12 +2326,6 @@
             battleMatchArea.style.display = 'block';
             battleToastMsg('再戦開始！ 準備OKを押してください');
             updateBattleUI();
-            // グローバル同期
-            window.battleIsFinished = battleIsFinished;
-            window.battleIsPlaying = battleIsPlaying;
-            window.battleYourScore = battleYourScore;
-            window.battleOppScore = battleOppScore;
-            window.battleIsReady = battleIsReady;
           });
         });
       }
@@ -2398,16 +2343,29 @@
         }
       }
 
+      // 作成ルーム数チェック
+      function checkRoomLimit() {
+        return new Promise((resolve) => {
+          const username = getUsername();
+          battleRef.once('value')
+            .then((snap) => {
+              const data = snap.val();
+              let count = 0;
+              if (data) {
+                Object.keys(data).forEach(key => {
+                  if (data[key].creator === username) {
+                    count++;
+                  }
+                });
+              }
+              resolve(count < MAX_CREATED_ROOMS);
+            })
+            .catch(() => resolve(false));
+        });
+      }
+
       function createBattleRoom() {
         if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
-
-        // ルーム制限チェック（作成済みルームがあれば最初のルーム名を使用）
-        const rooms = window.getRooms ? window.getRooms() : [];
-        if (rooms.length === 0) {
-          battleToastMsg('⚠️ 先に設定タブでルームを作成してください（最大3つ）');
-          return;
-        }
-
         let roomId = roomIdInput.value.trim().toUpperCase();
         if (!roomId) {
           battleToastMsg('ルームIDを入力してください');
@@ -2421,47 +2379,50 @@
         roomIdInput.value = roomId;
 
         const username = getUsername();
-        battlePlayerId = username;
 
-        // 作成済みルームの最初のものを使用
-        const roomName = rooms[0] || 'デフォルト';
+        // 作成制限チェック
+        checkRoomLimit().then((canCreate) => {
+          if (!canCreate) {
+            battleToastMsg(`ルームは最大${MAX_CREATED_ROOMS}つまでしか作成できません`);
+            return;
+          }
 
-        battleRef.child(roomId).once('value')
-          .then((snap) => {
-            if (snap.exists()) {
-              battleToastMsg('このルームIDは既に使用されています');
-              return;
-            }
-            const roomData = {
-              players: { [username]: { ready: false, score: 0, solved: false } },
-              votes: {},
-              winTarget: battleWinTarget,
-              status: 'waiting',
-              equation: null,
-              creator: username,
-              roomName: roomName,
-              maxPlayers: MAX_PLAYERS,
-              timestamp: Date.now()
-            };
-            return battleRef.child(roomId).set(roomData);
-          })
-          .then(() => {
-            battleRoomId = roomId;
-            roomStatus.textContent = `作成: ${roomId}`;
-            battleToastMsg('ルームを作成しました。参加者を待っています');
-            battleIsMatched = false;
-            battleStopMatchBtn.style.display = 'none';
-            battleContinueArea.style.display = 'none';
-            continuePressed = {};
-            continueStatus.textContent = '';
-            updateBattleAreas();
-            listenBattleRoom(roomId);
-            window.battleRoomId = battleRoomId;
-          })
-          .catch((err) => {
-            console.error('作成エラー:', err);
-            battleToastMsg('ルーム作成に失敗しました (エラー: ' + err.message + ')');
-          });
+          battleRef.child(roomId).once('value')
+            .then((snap) => {
+              if (snap.exists()) {
+                battleToastMsg('このルームIDは既に使用されています');
+                return;
+              }
+              const roomData = {
+                players: { [username]: { ready: false, score: 0, solved: false } },
+                votes: {},
+                winTarget: battleWinTarget,
+                status: 'waiting',
+                equation: null,
+                creator: username,
+                maxPlayers: MAX_PLAYERS,
+                timestamp: Date.now()
+              };
+              return battleRef.child(roomId).set(roomData);
+            })
+            .then(() => {
+              battleRoomId = roomId;
+              roomStatus.textContent = `作成: ${roomId}`;
+              battleToastMsg('ルームを作成しました。参加者を待っています');
+              battleIsMatched = false;
+              battleStopMatchBtn.style.display = 'none';
+              battleContinueArea.style.display = 'none';
+              continuePressed = {};
+              continueStatus.textContent = '';
+              updateBattleAreas();
+              listenBattleRoom(roomId);
+              loadMyRooms();
+            })
+            .catch((err) => {
+              console.error('作成エラー:', err);
+              battleToastMsg('ルーム作成に失敗しました (エラー: ' + err.message + ')');
+            });
+        });
       }
 
       function joinBattleRoom() {
@@ -2516,7 +2477,6 @@
             continueStatus.textContent = '';
             updateBattleAreas();
             listenBattleRoom(roomId);
-            window.battleRoomId = battleRoomId;
           })
           .catch((err) => {
             console.error('参加エラー:', err);
@@ -2595,7 +2555,6 @@
                   continueStatus.textContent = '';
                   updateBattleAreas();
                   listenBattleRoom(matchedRoomKey);
-                  window.battleRoomId = battleRoomId;
                 });
             } else {
               matchRetryCount++;
@@ -2722,7 +2681,6 @@
               battleContinueArea.style.display = 'flex';
               updateContinueStatus(usernames);
             }
-            window.battleIsFinished = battleIsFinished;
           }
 
           if (battleIsPlaying && !battleIsFinished) {
@@ -2748,6 +2706,8 @@
           }
 
           updateBattleAreas();
+          // ルームリスト更新
+          loadMyRooms();
         });
       }
 
@@ -2774,7 +2734,6 @@
             battleReadyBtn.textContent = '準備完了';
             battleReadyBtn.disabled = true;
             battleToastMsg('準備完了！ 他のプレイヤーを待っています');
-            window.battleIsReady = battleIsReady;
           })
           .catch((err) => {
             battleToastMsg('準備エラー: ' + err.message);
@@ -2893,11 +2852,7 @@
         battleToastMsg('退出しました');
         updateBattleAreas();
         stopBgm();
-        window.battleRoomId = null;
-        window.battleIsReady = false;
-        window.battleIsPlaying = false;
-        window.battleIsFinished = false;
-        window.battleIsMatched = false;
+        loadMyRooms();
       }
 
       // ============================================================
@@ -3052,6 +3007,11 @@
 
       digitSelect.addEventListener('change', () => { toastMessage(`桁数を ${digitSelect.value} に変更`); });
 
+      // ユーザー名変更時にルームリスト更新
+      saveUsernameBtn.addEventListener('click', function() {
+        setTimeout(loadMyRooms, 500);
+      });
+
       // ============================================================
       //  初期化
       // ============================================================
@@ -3091,6 +3051,9 @@
             }
           });
         }
+
+        // ルームリスト読み込み
+        setTimeout(loadMyRooms, 1000);
 
         document.addEventListener('click', () => {
           if (!audioCtx) { try { audioCtx = new(window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
