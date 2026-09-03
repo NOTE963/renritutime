@@ -1498,26 +1498,22 @@
       function updateVoteDisplay(votes, players) {
         if (!votes) return;
         const username = getUsername();
-        // 自分の投票状況
         if (votes[username]) {
           myVote = votes[username];
         }
 
-        // 投票結果集計
         const counts = {};
         const totalVoters = Object.keys(votes).length;
         Object.values(votes).forEach(d => {
           counts[d] = (counts[d] || 0) + 1;
         });
 
-        // 投票ボタンのハイライト
         const btns = voteButtons.querySelectorAll('.btn');
         btns.forEach(btn => {
           const digit = parseInt(btn.dataset.digit);
           btn.classList.toggle('selected', myVote === digit);
         });
 
-        // 投票状況表示
         const playerCount = Object.keys(players || {}).length;
         let statusText = `投票済み: ${totalVoters}/${playerCount}人`;
         if (totalVoters > 0) {
@@ -1527,9 +1523,7 @@
         }
         voteStatus.textContent = statusText;
 
-        // 全員投票完了したら確定
         if (totalVoters >= playerCount && playerCount >= 2) {
-          // 最多投票の桁数を決定
           let maxCount = 0;
           let winnerDigit = 3;
           for (const [d, c] of Object.entries(counts)) {
@@ -1539,7 +1533,6 @@
             }
           }
           voteStatus.textContent += ` → 決定: ${winnerDigit}桁！`;
-          // 式を生成して開始
           startBattleWithDigit(winnerDigit);
         }
       }
@@ -1549,7 +1542,6 @@
         battleRef.child(`${battleRoomId}/equation`).set(eq).then(() => {
           battleRef.child(`${battleRoomId}/status`).set('playing');
           battleRef.child(`${battleRoomId}/round`).set(battleRound + 1);
-          // 全員のsolvedをリセット
           battleRef.child(`${battleRoomId}/players`).once('value', (snap) => {
             const players = snap.val() || {};
             const updates = {};
@@ -1558,10 +1550,27 @@
             });
             battleRef.child(battleRoomId).update(updates);
           });
-          // 投票エリア非表示
           voteArea.style.display = 'none';
           battleToastMsg(`ラウンド ${battleRound + 1} スタート！ (${digit}桁)`);
           playStartSound();
+        });
+      }
+
+      // ルーム削除チェック
+      function checkAndDeleteRoom(roomId) {
+        battleRef.child(roomId).once('value', (snap) => {
+          const data = snap.val();
+          if (!data) return;
+          const players = data.players || {};
+          const playerCount = Object.keys(players).length;
+          if (playerCount === 0) {
+            // 全員退室したのでルームを削除
+            battleRef.child(roomId).remove().then(() => {
+              console.log('ルームを削除しました:', roomId);
+            }).catch(err => {
+              console.warn('ルーム削除エラー:', err);
+            });
+          }
         });
       }
 
@@ -1584,30 +1593,27 @@
           return;
         }
         if (!confirm('本当にギブアップしますか？')) return;
+
+        // ギブアップしたプレイヤーは退出扱いにして、次のラウンドへ進む
         const username = getUsername();
-        battleRef.child(`${battleRoomId}/players`).once('value')
-          .then((snap) => {
-            const players = snap.val() || {};
-            const opps = Object.keys(players).filter(n => n !== username);
-            if (opps.length > 0) {
-              const updates = {};
-              opps.forEach(opp => {
-                updates[`players/${opp}/score`] = (players[opp]?.score || 0) + 1;
-              });
-              updates['status'] = 'finished';
-              return battleRef.child(battleRoomId).update(updates);
-            }
-          })
-          .then(() => {
-            battleToastMsg('ギブアップしました');
-            showBattleResult(`あなたはギブアップしました。`);
-            battleIsFinished = true;
-            battleReadyBtn.disabled = true;
-            battleAnswerBtn.disabled = true;
-          })
-          .catch((err) => {
-            battleToastMsg('ギブアップエラー: ' + err.message);
-          });
+        // 自分をplayersから削除（退出扱い）
+        const updates = {};
+        updates[`players/${username}`] = null;
+        updates[`votes/${username}`] = null;
+
+        battleRef.child(battleRoomId).update(updates).then(() => {
+          battleToastMsg('ギブアップしました。退出します。');
+          // 自分のローカル状態をリセット
+          battleIsFinished = true;
+          battleReadyBtn.disabled = true;
+          battleAnswerBtn.disabled = true;
+          // ルーム削除チェック
+          checkAndDeleteRoom(battleRoomId);
+          // 退出処理
+          exitBattleRoom();
+        }).catch((err) => {
+          battleToastMsg('ギブアップエラー: ' + err.message);
+        });
       }
 
       function createBattleRoom() {
@@ -1848,7 +1854,6 @@
           battleRound = data.round || 0;
           updateBattleUI();
 
-          // 投票表示 - 全員が対象（作成者も含む）
           const votes = data.votes || {};
           const isVotingPhase = data.status === 'voting' || (data.status === 'waiting' && usernames.length >= 2);
           if (isVotingPhase && !data.equation) {
@@ -1873,7 +1878,6 @@
           }
 
           if (data.status === 'waiting' && usernames.length >= 2) {
-            // 全員準備完了なら投票フェーズへ
             const allReady = usernames.every(n => players[n] && players[n].ready === true);
             if (allReady && !data.equation && data.status !== 'voting') {
               battleRef.child(roomId).update({ status: 'voting' });
@@ -1977,7 +1981,6 @@
                           battleToastMsg('正解！ +1点');
                           playCorrectSound();
                           if (allSolved) {
-                            // 次のラウンドへ - 準備リセットして投票フェーズに戻る
                             battleRef.child(battleRoomId).update({
                               status: 'waiting',
                               equation: null,
@@ -2010,18 +2013,15 @@
         if (battleListener) { battleListener.off();
           battleListener = null; }
         if (battleRoomId && battleRef) {
-          battleRef.child(battleRoomId).once('value')
-            .then((snap) => {
-              const data = snap.val();
-              if (data) {
-                const username = getUsername();
-                const updates = {};
-                updates[`players/${username}`] = null;
-                updates[`votes/${username}`] = null;
-                battleRef.child(battleRoomId).update(updates);
-              }
-            })
-            .catch(() => {});
+          const roomId = battleRoomId;
+          const username = getUsername();
+          const updates = {};
+          updates[`players/${username}`] = null;
+          updates[`votes/${username}`] = null;
+          battleRef.child(roomId).update(updates).then(() => {
+            // 全員退室したかチェック
+            checkAndDeleteRoom(roomId);
+          }).catch(() => {});
         }
         battleRoomId = null;
         battleIsReady = false;
@@ -2199,7 +2199,6 @@
       battleExitBtn.addEventListener('click', exitBattleRoom);
       battleGiveUpBtn.addEventListener('click', giveUpBattle);
 
-      // 投票ボタン
       voteButtons.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn');
         if (!btn) return;
