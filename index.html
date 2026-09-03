@@ -2,14 +2,171 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>連立方程式 タイムアタック</title>
+  
+  <!-- ============================================================ -->
+  <!-- PWA マニフェスト (インストール用) -->
+  <!-- ============================================================ -->
+  <link rel="manifest" href="data:application/json;charset=utf-8,{
+    &quot;name&quot;: &quot;連立方程式 タイムアタック&quot;,
+    &quot;short_name&quot;: &quot;数式バトル&quot;,
+    &quot;description&quot;: &quot;連立方程式を解いてタイムを競うゲーム&quot;,
+    &quot;start_url&quot;: &quot;.&quot;,
+    &quot;display&quot;: &quot;standalone&quot;,
+    &quot;background_color&quot;: &quot;#0d1a26&quot;,
+    &quot;theme_color&quot;: &quot;#162b3b&quot;,
+    &quot;orientation&quot;: &quot;portrait&quot;,
+    &quot;icons&quot;: [
+      {
+        &quot;src&quot;: &quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23162b3b'/%3E%3Ctext x='256' y='320' text-anchor='middle' font-size='280' font-weight='bold' fill='%23b3e4ff' font-family='sans-serif'%3E%3C/text%3E%3C/svg%3E&quot;,
+        &quot;sizes&quot;: &quot;512x512&quot;,
+        &quot;type&quot;: &quot;image/svg+xml&quot;,
+        &quot;purpose&quot;: &quot;any maskable&quot;
+      },
+      {
+        &quot;src&quot;: &quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='30' fill='%23162b3b'/%3E%3Ctext x='96' y='130' text-anchor='middle' font-size='100' font-weight='bold' fill='%23b3e4ff' font-family='sans-serif'%3E%3C/text%3E%3C/svg%3E&quot;,
+        &quot;sizes&quot;: &quot;192x192&quot;,
+        &quot;type&quot;: &quot;image/svg+xml&quot;,
+        &quot;purpose&quot;: &quot;any maskable&quot;
+      }
+    ]
+  }" />
+  
+  <!-- ============================================================ -->
+  <!-- サービスワーカーの登録 (オフライン対応・インストール) -->
+  <!-- ============================================================ -->
+  <script>
+    // サービスワーカー登録（PWAインストール対応）
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        // サービスワーカーコードをインラインで生成
+        const swCode = `
+          self.addEventListener('install', function(e) {
+            e.waitUntil(
+              caches.open('equation-v1').then(function(cache) {
+                return cache.addAll([
+                  '/',
+                  '/index.html'
+                ]);
+              })
+            );
+          });
+          self.addEventListener('fetch', function(e) {
+            e.respondWith(
+              caches.match(e.request).then(function(response) {
+                return response || fetch(e.request);
+              })
+            );
+          });
+          self.addEventListener('activate', function(e) {
+            e.waitUntil(
+              caches.keys().then(function(keyList) {
+                return Promise.all(keyList.map(function(key) {
+                  if (key !== 'equation-v1') {
+                    return caches.delete(key);
+                  }
+                }));
+              })
+            );
+          });
+        `;
+        
+        // Blobからサービスワーカーを生成
+        const blob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+        
+        // サービスワーカーを登録
+        navigator.serviceWorker.register(swUrl, { scope: '/' })
+          .then(function(reg) {
+            console.log('Service Worker 登録成功');
+          })
+          .catch(function(err) {
+            console.log('Service Worker 登録失敗:', err);
+          });
+      });
+    }
+    
+    // インストールプロンプト表示制御
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      // インストールボタンを表示
+      const installBtn = document.getElementById('installBtn');
+      if (installBtn) {
+        installBtn.style.display = 'inline-block';
+        installBtn.textContent = '📲 アプリをインストール';
+      }
+    });
+    
+    // インストール実行
+    function installApp() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function(choiceResult) {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('ユーザーがインストールを承諾しました');
+          } else {
+            console.log('ユーザーがインストールを拒否しました');
+          }
+          deferredPrompt = null;
+          const installBtn = document.getElementById('installBtn');
+          if (installBtn) installBtn.style.display = 'none';
+        });
+      }
+    }
+    
+    // インストール完了イベント
+    window.addEventListener('appinstalled', function() {
+      console.log('アプリがインストールされました');
+      const installBtn = document.getElementById('installBtn');
+      if (installBtn) installBtn.style.display = 'none';
+    });
+  </script>
+
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
   </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js">
   </script>
   <style>
+    /* ===== インストールボタン ===== */
+    #installBtn {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      background: #3a7da8;
+      border: none;
+      border-bottom: 4px solid #1d4d6a;
+      padding: 14px 32px;
+      border-radius: 60px;
+      font-weight: 700;
+      font-size: 1.0rem;
+      color: #f2fcff;
+      cursor: pointer;
+      box-shadow: 0 8px 0 #0b1e2b, 0 12px 24px rgba(0, 0, 0, 0.6);
+      transition: 0.06s ease;
+      min-width: 200px;
+      text-align: center;
+    }
+    #installBtn:active {
+      transform: translateX(-50%) translateY(4px);
+      box-shadow: 0 4px 0 #0b1e2b;
+    }
+    @media (max-width: 500px) {
+      #installBtn {
+        padding: 12px 20px;
+        font-size: 0.9rem;
+        min-width: 160px;
+        bottom: 12px;
+      }
+    }
+
+    /* ===== 既存のスタイル ===== */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -23,6 +180,7 @@
       justify-content: center;
       align-items: center;
       padding: 16px;
+      padding-bottom: 80px;
     }
     .app {
       max-width: 760px;
@@ -672,7 +830,11 @@
   </style>
 </head>
 <body>
+  <!-- インストールボタン（PWA） -->
+  <button id="installBtn" onclick="installApp()">📲 アプリをインストール</button>
+
   <div class="app">
+    <!-- タブ -->
     <div class="tabs">
       <button class="tab-btn active" data-tab="tabChallenge">挑戦</button>
       <button class="tab-btn" data-tab="tabBattle">対戦</button>
@@ -863,6 +1025,9 @@
   </div>
 
   <script>
+    // ============================================================
+    //  ゲームのメインスクリプト（既存のコードをそのまま継続）
+    // ============================================================
     (function() {
       // ============================================================
       //  Firebase 設定
@@ -1166,11 +1331,8 @@
       let matchTimeout = null;
       const MAX_PLAYERS = 4;
 
-      // 投票関連
       let myVote = null;
       let voteResults = {};
-
-      // 続けて対戦関連
       let continuePressed = {};
       let isContinueMode = false;
 
@@ -1195,7 +1357,7 @@
       }
 
       // ============================================================
-      //  問題生成 (全て整数解)
+      //  問題生成
       // ============================================================
       function generateEquation(forcedDigit) {
         const digit = forcedDigit || getDigit();
@@ -1401,7 +1563,7 @@
       }
 
       // ============================================================
-      //  対戦モード (3問先取)
+      //  対戦モード (3問先取) - 簡略化（本質部分のみ）
       // ============================================================
       function battleToastMsg(msg) {
         battleToast.textContent = msg;
@@ -1561,7 +1723,6 @@
         }
       }
 
-      // 正解者が出たら次の問題へ（3問先取判定付き）
       function onCorrectAnswer(roomId) {
         battleRef.child(roomId).once('value', (snap) => {
           const data = snap.val();
@@ -1569,7 +1730,6 @@
           const players = data.players || {};
           const usernames = Object.keys(players);
 
-          // 3問先取したプレイヤーがいるかチェック
           let winner = null;
           let winnerScore = 0;
           usernames.forEach(n => {
@@ -1581,7 +1741,6 @@
           });
 
           if (winner) {
-            // 勝者決定！
             battleIsFinished = true;
             const isYou = winner === getUsername();
             showBattleResult(`${isYou ? 'あなた' : winner} の勝利！ (${winnerScore}問正解)`);
@@ -1589,15 +1748,12 @@
             battleReadyBtn.disabled = true;
             battleAnswerBtn.disabled = true;
             battleRef.child(roomId).update({ status: 'finished' });
-            // 続けて対戦エリアを表示（全員に表示される）
             battleContinueArea.style.display = 'flex';
-            // 続けて押した状態をリセット
             continuePressed = {};
             updateContinueStatus(usernames);
             return;
           }
 
-          // 次の問題を生成
           const votes = data.votes || {};
           const counts = {};
           Object.values(votes).forEach(d => {
@@ -1616,7 +1772,6 @@
           battleRef.child(roomId).update({
             equation: newEq
           }).then(() => {
-            // 全員のsolvedをリセット
             const resetUpdates = {};
             usernames.forEach(n => {
               resetUpdates[`players/${n}/solved`] = false;
@@ -1666,7 +1821,6 @@
         });
       }
 
-      // 続けて対戦のステータス更新
       function updateContinueStatus(usernames) {
         const total = usernames.length;
         const pressed = Object.keys(continuePressed).filter(n => continuePressed[n] === true).length;
@@ -1674,7 +1828,6 @@
           continueStatus.textContent = `続けて対戦準備: ${pressed}/${total}人`;
           if (pressed === total) {
             continueStatus.textContent = '全員準備完了！ 再戦を開始します...';
-            // 全員押したので再戦開始
             setTimeout(() => {
               executeContinueBattle();
             }, 1000);
@@ -1682,7 +1835,6 @@
         }
       }
 
-      // 再戦実行
       function executeContinueBattle() {
         if (!battleRoomId) return;
         battleRef.child(battleRoomId).once('value', (snap) => {
@@ -1690,7 +1842,6 @@
           if (!data) return;
           const players = data.players || {};
           const usernames = Object.keys(players);
-          // スコアをリセット
           const resetUpdates = {};
           usernames.forEach(n => {
             resetUpdates[`players/${n}/score`] = 0;
@@ -1700,7 +1851,6 @@
           resetUpdates['status'] = 'waiting';
           resetUpdates['equation'] = null;
           resetUpdates['votes'] = {};
-          // continueデータも削除
           usernames.forEach(n => {
             resetUpdates[`continue/${n}`] = null;
           });
@@ -1746,7 +1896,6 @@
           battleToastMsg('ルームIDを入力してください');
           return;
         }
-        // 英数字とアンダースコアのみ許可
         roomId = roomId.replace(/[^A-Z0-9_]/g, '');
         if (roomId.length < 1) {
           battleToastMsg('有効なルームIDを入力してください（英数字と_のみ）');
@@ -1757,7 +1906,6 @@
         const username = getUsername();
         battlePlayerId = username;
 
-        // 既にルームが存在するかチェック
         battleRef.child(roomId).once('value')
           .then((snap) => {
             if (snap.exists()) {
@@ -2046,14 +2194,12 @@
 
           if (data.status === 'finished') {
             battleIsFinished = true;
-            // 続けて対戦エリアを表示（まだ表示されていない場合）
             if (battleContinueArea.style.display !== 'flex') {
               battleContinueArea.style.display = 'flex';
               updateContinueStatus(usernames);
             }
           }
 
-          // 誰かが正解したら次の問題へ（3問先取判定付き）
           if (battleIsPlaying && !battleIsFinished) {
             const anySolved = usernames.some(n => players[n] && players[n].solved === true);
             if (anySolved && usernames.length >= 2) {
@@ -2148,15 +2294,12 @@
           });
       }
 
-      // 続けて対戦ボタン処理
       function handleContinue() {
         if (!battleRoomId) return;
         const username = getUsername();
         continuePressed[username] = true;
-        // Firebaseに保存して共有
         battleRef.child(`${battleRoomId}/continue/${username}`).set(true);
         battleToastMsg('再戦準備OK！ 他のプレイヤーを待っています');
-        // ローカルのステータス更新
         battleRef.child(battleRoomId).once('value', (snap) => {
           const data = snap.val();
           if (data) {
