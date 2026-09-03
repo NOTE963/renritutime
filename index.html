@@ -4,79 +4,56 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>連立方程式 タイムアタック</title>
-  
+
   <!-- ============================================================ -->
-  <!-- PWA マニフェスト (インストール用) -->
+  <!-- PWA マニフェスト -->
   <!-- ============================================================ -->
-  <link rel="manifest" href="data:application/json;charset=utf-8,{
-    &quot;name&quot;: &quot;連立方程式 タイムアタック&quot;,
-    &quot;short_name&quot;: &quot;数式バトル&quot;,
-    &quot;description&quot;: &quot;連立方程式を解いてタイムを競うゲーム&quot;,
-    &quot;start_url&quot;: &quot;.&quot;,
-    &quot;display&quot;: &quot;standalone&quot;,
-    &quot;background_color&quot;: &quot;#0d1a26&quot;,
-    &quot;theme_color&quot;: &quot;#162b3b&quot;,
-    &quot;orientation&quot;: &quot;portrait&quot;,
-    &quot;icons&quot;: [
-      {
-        &quot;src&quot;: &quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23162b3b'/%3E%3Ctext x='256' y='320' text-anchor='middle' font-size='280' font-weight='bold' fill='%23b3e4ff' font-family='sans-serif'%3E%3C/text%3E%3C/svg%3E&quot;,
-        &quot;sizes&quot;: &quot;512x512&quot;,
-        &quot;type&quot;: &quot;image/svg+xml&quot;,
-        &quot;purpose&quot;: &quot;any maskable&quot;
-      },
-      {
-        &quot;src&quot;: &quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='30' fill='%23162b3b'/%3E%3Ctext x='96' y='130' text-anchor='middle' font-size='100' font-weight='bold' fill='%23b3e4ff' font-family='sans-serif'%3E%3C/text%3E%3C/svg%3E&quot;,
-        &quot;sizes&quot;: &quot;192x192&quot;,
-        &quot;type&quot;: &quot;image/svg+xml&quot;,
-        &quot;purpose&quot;: &quot;any maskable&quot;
-      }
-    ]
-  }" />
-  
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23162b3b'/%3E%3Ctext x='256' y='330' text-anchor='middle' font-size='260' font-weight='bold' fill='%23b3e4ff' font-family='sans-serif'%3E%3C/text%3E%3C/svg%3E" type="image/svg+xml" />
+
   <!-- ============================================================ -->
-  <!-- サービスワーカーの登録 (オフライン対応・インストール) -->
+  <!-- サービスワーカーの登録 -->
   <!-- ============================================================ -->
   <script>
     // サービスワーカー登録（PWAインストール対応）
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        // サービスワーカーコードをインラインで生成
-        const swCode = `
-          self.addEventListener('install', function(e) {
-            e.waitUntil(
-              caches.open('equation-v1').then(function(cache) {
-                return cache.addAll([
-                  '/',
-                  '/index.html'
-                ]);
-              })
-            );
-          });
-          self.addEventListener('fetch', function(e) {
-            e.respondWith(
-              caches.match(e.request).then(function(response) {
-                return response || fetch(e.request);
-              })
-            );
-          });
-          self.addEventListener('activate', function(e) {
-            e.waitUntil(
-              caches.keys().then(function(keyList) {
-                return Promise.all(keyList.map(function(key) {
-                  if (key !== 'equation-v1') {
-                    return caches.delete(key);
-                  }
-                }));
-              })
-            );
-          });
-        `;
-        
-        // Blobからサービスワーカーを生成
+      // サービスワーカーコードをインラインで生成
+      const swCode = `
+        self.addEventListener('install', function(e) {
+          e.waitUntil(
+            caches.open('equation-v1').then(function(cache) {
+              return cache.addAll([
+                '/',
+                '/index.html',
+                '/manifest.json'
+              ]);
+            })
+          );
+        });
+        self.addEventListener('fetch', function(e) {
+          e.respondWith(
+            caches.match(e.request).then(function(response) {
+              return response || fetch(e.request);
+            })
+          );
+        });
+        self.addEventListener('activate', function(e) {
+          e.waitUntil(
+            caches.keys().then(function(keyList) {
+              return Promise.all(keyList.map(function(key) {
+                if (key !== 'equation-v1') {
+                  return caches.delete(key);
+                }
+              }));
+            })
+          );
+        });
+      `;
+
+      try {
         const blob = new Blob([swCode], { type: 'application/javascript' });
         const swUrl = URL.createObjectURL(blob);
-        
-        // サービスワーカーを登録
+
         navigator.serviceWorker.register(swUrl, { scope: '/' })
           .then(function(reg) {
             console.log('Service Worker 登録成功');
@@ -84,14 +61,19 @@
           .catch(function(err) {
             console.log('Service Worker 登録失敗:', err);
           });
-      });
+      } catch (e) {
+        console.log('Service Worker 生成エラー:', e);
+      }
     }
-    
+
     // インストールプロンプト表示制御
     let deferredPrompt = null;
+    let installPromptShown = false;
+
     window.addEventListener('beforeinstallprompt', function(e) {
       e.preventDefault();
       deferredPrompt = e;
+      installPromptShown = true;
       // インストールボタンを表示
       const installBtn = document.getElementById('installBtn');
       if (installBtn) {
@@ -99,7 +81,7 @@
         installBtn.textContent = '📲 アプリをインストール';
       }
     });
-    
+
     // インストール実行
     function installApp() {
       if (deferredPrompt) {
@@ -114,14 +96,31 @@
           const installBtn = document.getElementById('installBtn');
           if (installBtn) installBtn.style.display = 'none';
         });
+      } else {
+        // フォールバック：ブラウザのインストール機能を呼び出す
+        alert('インストールプロンプトが表示されませんでした。\nブラウザのメニューから「ホーム画面に追加」をお試しください。');
       }
     }
-    
+
     // インストール完了イベント
     window.addEventListener('appinstalled', function() {
       console.log('アプリがインストールされました');
       const installBtn = document.getElementById('installBtn');
       if (installBtn) installBtn.style.display = 'none';
+    });
+
+    // ページ読み込み後にインストールボタンを表示（beforeinstallpromptが来なかった場合のフォールバック）
+    window.addEventListener('load', function() {
+      // beforeinstallpromptが1秒以内に来なかったらフォールバック表示
+      setTimeout(function() {
+        if (!installPromptShown) {
+          const installBtn = document.getElementById('installBtn');
+          if (installBtn && navigator.userAgent.includes('Chrome')) {
+            installBtn.style.display = 'inline-block';
+            installBtn.textContent = '📲 アプリをインストール';
+          }
+        }
+      }, 3000);
     });
   </script>
 
@@ -164,6 +163,57 @@
         min-width: 160px;
         bottom: 12px;
       }
+    }
+
+    /* ===== 引き継ぎ設定エリア ===== */
+    .data-transfer-area {
+      background: #0f1e2b;
+      border-radius: 24px;
+      padding: 16px;
+      margin-top: 12px;
+      border: 1px solid #2d4a5e;
+    }
+    .data-transfer-area h4 {
+      color: #c8e0ef;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+    .data-transfer-area .btn {
+      flex: 0 1 auto;
+      padding: 8px 18px;
+      font-size: 0.85rem;
+      min-width: 80px;
+    }
+    .data-transfer-area .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .data-transfer-area .row label {
+      color: #8aacbf;
+      font-size: 0.8rem;
+      min-width: 100px;
+    }
+    .data-transfer-area .row input {
+      background: #162b3a;
+      border: 1px solid #2f5066;
+      padding: 6px 12px;
+      border-radius: 20px;
+      color: white;
+      font-size: 0.85rem;
+      outline: none;
+      flex: 1;
+      min-width: 120px;
+    }
+    .data-transfer-area .row input:focus {
+      border-color: #5a9ec9;
+    }
+    .data-transfer-status {
+      color: #7b9eb3;
+      font-size: 0.75rem;
+      margin-top: 8px;
     }
 
     /* ===== 既存のスタイル ===== */
@@ -1010,7 +1060,24 @@
         <div class="delete-section">
           <button class="btn btn-danger" id="deleteAccountBtn" style="min-width:140px;">アカウント削除</button>
         </div>
+
+        <!-- 引き継ぎエリア -->
+        <div class="data-transfer-area">
+          <h4>📦 データの引き継ぎ</h4>
+          <div class="row">
+            <label>エクスポートコード</label>
+            <input type="text" id="exportCode" readonly value="コードを生成してください" style="cursor:pointer;" onclick="this.select();" />
+            <button class="btn btn-primary" id="exportDataBtn" style="flex:0 1 auto; padding:6px 14px;">生成</button>
+          </div>
+          <div class="row">
+            <label>インポートコード</label>
+            <input type="text" id="importCode" placeholder="コードを貼り付け" />
+            <button class="btn btn-success" id="importDataBtn" style="flex:0 1 auto; padding:6px 14px;">復元</button>
+          </div>
+          <div class="data-transfer-status" id="dataTransferStatus">データはローカルに保存されています</div>
+        </div>
       </div>
+
       <div class="memo-section">
         <div class="memo-header">
           <span>メモ</span>
@@ -1026,7 +1093,130 @@
 
   <script>
     // ============================================================
-    //  ゲームのメインスクリプト（既存のコードをそのまま継続）
+    //  データ引き継ぎ機能
+    // ============================================================
+    (function() {
+      // エクスポート
+      document.getElementById('exportDataBtn').addEventListener('click', function() {
+        try {
+          const data = {
+            username: localStorage.getItem('eq_username') || '',
+            name_locked: localStorage.getItem('eq_name_locked') || '',
+            memo: localStorage.getItem('memo_data') || '',
+            ranking: localStorage.getItem('rank_v5_all') || '',
+            version: '1.0'
+          };
+          const json = JSON.stringify(data);
+          // 圧縮（簡易的）
+          let encoded = '';
+          for (let i = 0; i < json.length; i++) {
+            encoded += String.fromCharCode(json.charCodeAt(i) + 1);
+          }
+          const code = btoa(encoded);
+          document.getElementById('exportCode').value = code;
+          document.getElementById('dataTransferStatus').textContent = '✅ エクスポートコードを生成しました（コピーして保存）';
+          document.getElementById('dataTransferStatus').style.color = '#7bc9a0';
+        } catch (e) {
+          document.getElementById('dataTransferStatus').textContent = '❌ エクスポートに失敗しました: ' + e.message;
+          document.getElementById('dataTransferStatus').style.color = '#f5a3a3';
+        }
+      });
+
+      // インポート
+      document.getElementById('importDataBtn').addEventListener('click', function() {
+        const code = document.getElementById('importCode').value.trim();
+        if (!code) {
+          document.getElementById('dataTransferStatus').textContent = '⚠️ コードを入力してください';
+          document.getElementById('dataTransferStatus').style.color = '#f5a3a3';
+          return;
+        }
+
+        try {
+          // デコード
+          const decoded = atob(code);
+          let json = '';
+          for (let i = 0; i < decoded.length; i++) {
+            json += String.fromCharCode(decoded.charCodeAt(i) - 1);
+          }
+          const data = JSON.parse(json);
+
+          // データ復元
+          let restored = 0;
+          if (data.username) {
+            localStorage.setItem('eq_username', data.username);
+            document.getElementById('usernameInput').value = data.username;
+            restored++;
+          }
+          if (data.name_locked) {
+            localStorage.setItem('eq_name_locked', data.name_locked);
+            restored++;
+          }
+          if (data.memo) {
+            localStorage.setItem('memo_data', data.memo);
+            restored++;
+          }
+          if (data.ranking) {
+            localStorage.setItem('rank_v5_all', data.ranking);
+            restored++;
+          }
+
+          // UI更新
+          if (data.username) {
+            const nameLocked = localStorage.getItem('eq_name_locked') === 'true';
+            if (nameLocked) {
+              document.getElementById('usernameInput').disabled = true;
+              document.getElementById('saveUsernameBtn').disabled = true;
+              document.getElementById('nameLockStatus').textContent = '変更できません';
+              document.getElementById('nameLockStatus').style.color = '#f5a3a3';
+            }
+          }
+
+          // メモ復元
+          if (data.memo) {
+            try {
+              const memoData = JSON.parse(data.memo);
+              const memoTexts = [
+                document.getElementById('memoText'),
+                document.getElementById('memoText2'),
+                document.getElementById('memoText3'),
+                document.getElementById('memoText4')
+              ];
+              for (let i = 0; i < memoTexts.length && i < memoData.length; i++) {
+                if (memoData[i] !== undefined) {
+                  memoTexts[i].value = memoData[i];
+                }
+              }
+            } catch (e) {}
+          }
+
+          // ランキング復元
+          if (data.ranking) {
+            try {
+              const rankingData = JSON.parse(data.ranking);
+              // ランキング表示を更新するためにリロード
+              window.location.reload();
+            } catch (e) {}
+          }
+
+          document.getElementById('dataTransferStatus').textContent =
+            `✅ ${restored}項目のデータを復元しました！ (再読み込み中...)`;
+          document.getElementById('dataTransferStatus').style.color = '#7bc9a0';
+
+          // 1秒後にリロード（ランキング反映のため）
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+
+        } catch (e) {
+          document.getElementById('dataTransferStatus').textContent = '❌ 復元に失敗しました: コードが正しくありません';
+          document.getElementById('dataTransferStatus').style.color = '#f5a3a3';
+          console.error('インポートエラー:', e);
+        }
+      });
+    })();
+
+    // ============================================================
+    //  ゲームのメインスクリプト
     // ============================================================
     (function() {
       // ============================================================
@@ -1563,7 +1753,7 @@
       }
 
       // ============================================================
-      //  対戦モード (3問先取) - 簡略化（本質部分のみ）
+      //  対戦モード (3問先取)
       // ============================================================
       function battleToastMsg(msg) {
         battleToast.textContent = msg;
