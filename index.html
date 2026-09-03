@@ -402,7 +402,7 @@
     .battle-score .score-opponent {
       color: #f5a3a3;
     }
-    .battle-round {
+    .battle-win-count {
       background: #1a3343;
       padding: 2px 16px;
       border-radius: 30px;
@@ -709,7 +709,7 @@
           <span class="score-you">あなた: <span id="yourScore">0</span></span>
           <span class="score-opponent">相手: <span id="opponentScore">0</span></span>
         </div>
-        <div class="battle-round">ラウンド <span id="battleRound">0</span>/3</div>
+        <div class="battle-win-count">目標: <span id="winTarget">3</span>問正解</div>
         <div class="battle-opponent" id="opponentNameDisplay">待機中</div>
       </div>
 
@@ -727,7 +727,7 @@
 
       <!-- 投票エリア -->
       <div id="voteArea" class="vote-area" style="display:none;">
-        <h3>📊 桁数に投票してください</h3>
+        <h3>桁数に投票してください</h3>
         <div class="vote-buttons" id="voteButtons">
           <button class="btn" data-digit="1">1桁</button>
           <button class="btn" data-digit="2">2桁</button>
@@ -741,7 +741,6 @@
       <div id="battleMatchArea" style="display:none;">
         <div class="battle-waiting-area">
           <button class="btn btn-primary" id="battleReadyBtn">準備OK</button>
-          <button class="btn btn-danger" id="battleGiveUpBtn">ギブアップ</button>
           <button class="btn btn-warning" id="battleExitBtn">退出</button>
         </div>
       </div>
@@ -986,7 +985,6 @@
       const battleReadyBtn = document.getElementById('battleReadyBtn');
       const battleAnswerBtn = document.getElementById('battleAnswerBtn');
       const battleExitBtn = document.getElementById('battleExitBtn');
-      const battleGiveUpBtn = document.getElementById('battleGiveUpBtn');
       const battleJoinBtn = document.getElementById('battleJoinBtn');
       const battleCreateBtn = document.getElementById('battleCreateBtn');
       const battleRandomBtn = document.getElementById('battleRandomBtn');
@@ -996,7 +994,7 @@
       const battleToast = document.getElementById('battleToast');
       const yourScoreEl = document.getElementById('yourScore');
       const opponentScoreEl = document.getElementById('opponentScore');
-      const battleRoundEl = document.getElementById('battleRound');
+      const winTargetEl = document.getElementById('winTarget');
       const opponentNameDisplay = document.getElementById('opponentNameDisplay');
       const battleResult = document.getElementById('battleResult');
       const battleMatchArea = document.getElementById('battleMatchArea');
@@ -1130,8 +1128,7 @@
       let battlePlayerId = null;
       let battleYourScore = 0;
       let battleOppScore = 0;
-      let battleRound = 0;
-      let battleMaxRound = 3;
+      let battleWinTarget = 3;
       let battleIsReady = false;
       let battleIsPlaying = false;
       let battleIsFinished = false;
@@ -1375,7 +1372,7 @@
       }
 
       // ============================================================
-      //  対戦モード (自動次ラウンド)
+      //  対戦モード (3問先取)
       // ============================================================
       function battleToastMsg(msg) {
         battleToast.textContent = msg;
@@ -1446,7 +1443,7 @@
       function updateBattleUI() {
         yourScoreEl.textContent = battleYourScore;
         opponentScoreEl.textContent = battleOppScore;
-        battleRoundEl.textContent = battleRound;
+        winTargetEl.textContent = battleWinTarget;
         if (battleOpponentName) opponentNameDisplay.textContent = battleOpponentName;
         battleReadyBtn.textContent = battleIsReady ? '準備完了' : '準備OK';
         battleReadyBtn.disabled = battleIsReady || battleIsPlaying || battleIsFinished;
@@ -1471,7 +1468,6 @@
         }
       }
 
-      // プレイヤーリスト表示
       function renderPlayerList(players) {
         playerListEl.innerHTML = '';
         if (!players) return;
@@ -1494,7 +1490,6 @@
         }
       }
 
-      // 投票表示更新
       function updateVoteDisplay(votes, players) {
         if (!votes) return;
         const username = getUsername();
@@ -1537,11 +1532,76 @@
         }
       }
 
+      // 正解者が出たら次の問題へ（3問先取判定付き）
+      function onCorrectAnswer(roomId) {
+        battleRef.child(roomId).once('value', (snap) => {
+          const data = snap.val();
+          if (!data) return;
+          const players = data.players || {};
+          const usernames = Object.keys(players);
+
+          // 3問先取したプレイヤーがいるかチェック
+          let winner = null;
+          let winnerScore = 0;
+          usernames.forEach(n => {
+            const score = players[n]?.score || 0;
+            if (score >= battleWinTarget) {
+              winner = n;
+              winnerScore = score;
+            }
+          });
+
+          if (winner) {
+            // 勝者決定！
+            battleIsFinished = true;
+            const isYou = winner === getUsername();
+            showBattleResult(`${isYou ? 'あなた' : winner} の勝利！ (${winnerScore}問正解)`);
+            battleToastMsg(`対戦終了！ ${winner} の勝利！`);
+            battleReadyBtn.disabled = true;
+            battleAnswerBtn.disabled = true;
+            battleRef.child(roomId).update({ status: 'finished' });
+            return;
+          }
+
+          // 次の問題を生成
+          const votes = data.votes || {};
+          const counts = {};
+          Object.values(votes).forEach(d => {
+            counts[d] = (counts[d] || 0) + 1;
+          });
+          let maxCount = 0;
+          let winnerDigit = 3;
+          for (const [d, c] of Object.entries(counts)) {
+            if (c > maxCount) {
+              maxCount = c;
+              winnerDigit = parseInt(d);
+            }
+          }
+
+          const newEq = generateBattleEquation(winnerDigit);
+          battleRef.child(roomId).update({
+            equation: newEq
+          }).then(() => {
+            // 全員のsolvedをリセット
+            const resetUpdates = {};
+            usernames.forEach(n => {
+              resetUpdates[`players/${n}/solved`] = false;
+            });
+            battleRef.child(roomId).update(resetUpdates);
+            battleToastMsg(`次の問題が出ました！`);
+            setBattleEquation(newEq);
+            battleIsPlaying = true;
+            battleReadyBtn.disabled = true;
+            battleQuestionArea.style.display = 'block';
+            playStartSound();
+          });
+        });
+      }
+
       function startBattleWithDigit(digit) {
         const eq = generateBattleEquation(digit);
         battleRef.child(`${battleRoomId}/equation`).set(eq).then(() => {
           battleRef.child(`${battleRoomId}/status`).set('playing');
-          battleRef.child(`${battleRoomId}/round`).set(battleRound + 1);
           battleRef.child(`${battleRoomId}/players`).once('value', (snap) => {
             const players = snap.val() || {};
             const updates = {};
@@ -1551,59 +1611,8 @@
             battleRef.child(battleRoomId).update(updates);
           });
           voteArea.style.display = 'none';
-          battleToastMsg(`ラウンド ${battleRound + 1} スタート！ (${digit}桁)`);
+          battleToastMsg(`問題スタート！ (${digit}桁)`);
           playStartSound();
-        });
-      }
-
-      // 次のラウンドへ自動遷移 (正解後 or ギブアップ後)
-      function goToNextRound() {
-        if (!battleRoomId) return;
-        battleRef.child(battleRoomId).once('value', (snap) => {
-          const data = snap.val();
-          if (!data) return;
-          const players = data.players || {};
-          const usernames = Object.keys(players);
-          const currentRound = data.round || 0;
-
-          // 3ラウンド終了したら勝者判定
-          if (currentRound >= battleMaxRound) {
-            let winner = '';
-            let maxScore = -1;
-            usernames.forEach(n => {
-              const s = players[n]?.score || 0;
-              if (s > maxScore) { maxScore = s;
-                winner = n; }
-            });
-            if (winner) {
-              battleIsFinished = true;
-              const isYou = winner === getUsername();
-              showBattleResult(`${isYou ? 'あなた' : winner} の勝利！ (${maxScore}点)`);
-              battleToastMsg(`対戦終了！ ${winner} の勝利！`);
-              battleReadyBtn.disabled = true;
-              battleAnswerBtn.disabled = true;
-              battleRef.child(battleRoomId).update({ status: 'finished' });
-            }
-            return;
-          }
-
-          // 次のラウンドへ (準備フェーズに戻る)
-          battleRef.child(battleRoomId).update({
-            status: 'waiting',
-            equation: null,
-            votes: {}
-          }).then(() => {
-            const resetUpdates = {};
-            usernames.forEach(n => { resetUpdates[`players/${n}/ready`] = false; });
-            battleRef.child(battleRoomId).update(resetUpdates);
-            battleIsReady = false;
-            battleReadyBtn.disabled = false;
-            battleReadyBtn.textContent = '準備OK';
-            battleIsPlaying = false;
-            battleQuestionArea.style.display = 'none';
-            battleResult.style.display = 'none';
-            battleToastMsg(`ラウンド ${currentRound + 1} の準備をしてください`);
-          });
         });
       }
 
@@ -1636,43 +1645,6 @@
         }
       }
 
-      function giveUpBattle() {
-        if (!battleRoomId || !battleIsPlaying || battleIsFinished) {
-          battleToastMsg('対戦中ではありません');
-          return;
-        }
-        if (!confirm('本当にギブアップしますか？')) return;
-
-        const username = getUsername();
-        // ギブアップしたプレイヤーは退出
-        const updates = {};
-        updates[`players/${username}`] = null;
-        updates[`votes/${username}`] = null;
-
-        battleRef.child(battleRoomId).update(updates).then(() => {
-          battleToastMsg('ギブアップしました。退出します。');
-          battleIsFinished = true;
-          battleReadyBtn.disabled = true;
-          battleAnswerBtn.disabled = true;
-          // 残りのプレイヤーで次のラウンドへ
-          battleRef.child(battleRoomId).once('value', (snap) => {
-            const data = snap.val();
-            if (!data) return;
-            const players = data.players || {};
-            const remaining = Object.keys(players);
-            if (remaining.length === 0) {
-              checkAndDeleteRoom(battleRoomId);
-            } else {
-              // 次のラウンドへ
-              goToNextRound();
-            }
-          });
-          exitBattleRoom();
-        }).catch((err) => {
-          battleToastMsg('ギブアップエラー: ' + err.message);
-        });
-      }
-
       function createBattleRoom() {
         if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
         const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -1682,8 +1654,7 @@
         const roomData = {
           players: { [username]: { ready: false, score: 0, solved: false } },
           votes: {},
-          round: 0,
-          maxRound: 3,
+          winTarget: battleWinTarget,
           status: 'waiting',
           equation: null,
           creator: username,
@@ -1908,7 +1879,6 @@
           });
           battleOppScore = totalOppScore;
 
-          battleRound = data.round || 0;
           updateBattleUI();
 
           const votes = data.votes || {};
@@ -1942,33 +1912,19 @@
             }
           }
 
-          // 勝利判定（3ラウンド終了後）
-          if (data.status === 'finished' || data.round >= battleMaxRound) {
+          if (data.status === 'finished') {
             battleIsFinished = true;
-            let winner = '';
-            let maxScore = -1;
-            usernames.forEach(n => {
-              const s = players[n]?.score || 0;
-              if (s > maxScore) { maxScore = s;
-                winner = n; }
-            });
-            if (winner) {
-              const isYou = winner === username;
-              showBattleResult(`${isYou ? 'あなた' : winner} の勝利！ (${maxScore}点)`);
-              battleToastMsg(`対戦終了！ ${winner} の勝利！`);
-              battleReadyBtn.disabled = true;
-              battleAnswerBtn.disabled = true;
-            }
+            // 勝者は既に判定済み
           }
 
-          // 全員が解いたら自動で次のラウンドへ
+          // 誰かが正解したら次の問題へ（3問先取判定付き）
           if (battleIsPlaying && !battleIsFinished) {
-            const allSolved = usernames.every(n => players[n] && players[n].solved === true);
-            if (allSolved && usernames.length >= 2) {
-              // 次のラウンドへ自動遷移
-              battleToastMsg('全員解答完了！ 次のラウンドへ...');
+            const anySolved = usernames.some(n => players[n] && players[n].solved === true);
+            if (anySolved && usernames.length >= 2) {
+              // 少し待ってから次の問題へ（正解処理が完了するのを待つ）
+              battleToastMsg('正解者がいました！ 次の問題へ...');
               setTimeout(() => {
-                goToNextRound();
+                onCorrectAnswer(roomId);
               }, 1500);
             }
           }
@@ -1989,7 +1945,6 @@
         });
       }
 
-      // 投票処理
       function handleVote(digit) {
         if (!battleRoomId) return;
         const username = getUsername();
@@ -2042,16 +1997,10 @@
                   const updates = {};
                   updates[`players/${username}/solved`] = true;
                   updates[`players/${username}/score`] = (battleYourScore || 0) + 1;
-                  return battleRef.child(`${battleRoomId}/players`).once('value')
-                    .then((pSnap) => {
-                      const players = pSnap.val() || {};
-                      // スコア更新
-                      return battleRef.child(battleRoomId).update(updates)
-                        .then(() => {
-                          battleToastMsg('正解！ +1点');
-                          playCorrectSound();
-                          // 全員解いたかチェックは listener で行う
-                        });
+                  return battleRef.child(battleRoomId).update(updates)
+                    .then(() => {
+                      battleToastMsg('正解！ +1問');
+                      playCorrectSound();
                     });
                 } else {
                   battleToastMsg('不正解');
@@ -2083,7 +2032,6 @@
         battleIsFinished = false;
         battleYourScore = 0;
         battleOppScore = 0;
-        battleRound = 0;
         battleOpponentName = '';
         battleMySolved = false;
         battleOppSolved = false;
@@ -2251,7 +2199,6 @@
       battleReadyBtn.addEventListener('click', setBattleReady);
       battleAnswerBtn.addEventListener('click', battleAnswer);
       battleExitBtn.addEventListener('click', exitBattleRoom);
-      battleGiveUpBtn.addEventListener('click', giveUpBattle);
 
       voteButtons.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn');
