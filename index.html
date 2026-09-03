@@ -1375,7 +1375,7 @@
       }
 
       // ============================================================
-      //  対戦モード (投票式)
+      //  対戦モード (自動次ラウンド)
       // ============================================================
       function battleToastMsg(msg) {
         battleToast.textContent = msg;
@@ -1556,7 +1556,57 @@
         });
       }
 
-      // ルーム削除チェック
+      // 次のラウンドへ自動遷移 (正解後 or ギブアップ後)
+      function goToNextRound() {
+        if (!battleRoomId) return;
+        battleRef.child(battleRoomId).once('value', (snap) => {
+          const data = snap.val();
+          if (!data) return;
+          const players = data.players || {};
+          const usernames = Object.keys(players);
+          const currentRound = data.round || 0;
+
+          // 3ラウンド終了したら勝者判定
+          if (currentRound >= battleMaxRound) {
+            let winner = '';
+            let maxScore = -1;
+            usernames.forEach(n => {
+              const s = players[n]?.score || 0;
+              if (s > maxScore) { maxScore = s;
+                winner = n; }
+            });
+            if (winner) {
+              battleIsFinished = true;
+              const isYou = winner === getUsername();
+              showBattleResult(`${isYou ? 'あなた' : winner} の勝利！ (${maxScore}点)`);
+              battleToastMsg(`対戦終了！ ${winner} の勝利！`);
+              battleReadyBtn.disabled = true;
+              battleAnswerBtn.disabled = true;
+              battleRef.child(battleRoomId).update({ status: 'finished' });
+            }
+            return;
+          }
+
+          // 次のラウンドへ (準備フェーズに戻る)
+          battleRef.child(battleRoomId).update({
+            status: 'waiting',
+            equation: null,
+            votes: {}
+          }).then(() => {
+            const resetUpdates = {};
+            usernames.forEach(n => { resetUpdates[`players/${n}/ready`] = false; });
+            battleRef.child(battleRoomId).update(resetUpdates);
+            battleIsReady = false;
+            battleReadyBtn.disabled = false;
+            battleReadyBtn.textContent = '準備OK';
+            battleIsPlaying = false;
+            battleQuestionArea.style.display = 'none';
+            battleResult.style.display = 'none';
+            battleToastMsg(`ラウンド ${currentRound + 1} の準備をしてください`);
+          });
+        });
+      }
+
       function checkAndDeleteRoom(roomId) {
         battleRef.child(roomId).once('value', (snap) => {
           const data = snap.val();
@@ -1564,7 +1614,6 @@
           const players = data.players || {};
           const playerCount = Object.keys(players).length;
           if (playerCount === 0) {
-            // 全員退室したのでルームを削除
             battleRef.child(roomId).remove().then(() => {
               console.log('ルームを削除しました:', roomId);
             }).catch(err => {
@@ -1594,22 +1643,30 @@
         }
         if (!confirm('本当にギブアップしますか？')) return;
 
-        // ギブアップしたプレイヤーは退出扱いにして、次のラウンドへ進む
         const username = getUsername();
-        // 自分をplayersから削除（退出扱い）
+        // ギブアップしたプレイヤーは退出
         const updates = {};
         updates[`players/${username}`] = null;
         updates[`votes/${username}`] = null;
 
         battleRef.child(battleRoomId).update(updates).then(() => {
           battleToastMsg('ギブアップしました。退出します。');
-          // 自分のローカル状態をリセット
           battleIsFinished = true;
           battleReadyBtn.disabled = true;
           battleAnswerBtn.disabled = true;
-          // ルーム削除チェック
-          checkAndDeleteRoom(battleRoomId);
-          // 退出処理
+          // 残りのプレイヤーで次のラウンドへ
+          battleRef.child(battleRoomId).once('value', (snap) => {
+            const data = snap.val();
+            if (!data) return;
+            const players = data.players || {};
+            const remaining = Object.keys(players);
+            if (remaining.length === 0) {
+              checkAndDeleteRoom(battleRoomId);
+            } else {
+              // 次のラウンドへ
+              goToNextRound();
+            }
+          });
           exitBattleRoom();
         }).catch((err) => {
           battleToastMsg('ギブアップエラー: ' + err.message);
@@ -1885,7 +1942,8 @@
             }
           }
 
-          if (data.status === 'finished' || data.round >= data.maxRound) {
+          // 勝利判定（3ラウンド終了後）
+          if (data.status === 'finished' || data.round >= battleMaxRound) {
             battleIsFinished = true;
             let winner = '';
             let maxScore = -1;
@@ -1900,6 +1958,18 @@
               battleToastMsg(`対戦終了！ ${winner} の勝利！`);
               battleReadyBtn.disabled = true;
               battleAnswerBtn.disabled = true;
+            }
+          }
+
+          // 全員が解いたら自動で次のラウンドへ
+          if (battleIsPlaying && !battleIsFinished) {
+            const allSolved = usernames.every(n => players[n] && players[n].solved === true);
+            if (allSolved && usernames.length >= 2) {
+              // 次のラウンドへ自動遷移
+              battleToastMsg('全員解答完了！ 次のラウンドへ...');
+              setTimeout(() => {
+                goToNextRound();
+              }, 1500);
             }
           }
 
@@ -1975,27 +2045,12 @@
                   return battleRef.child(`${battleRoomId}/players`).once('value')
                     .then((pSnap) => {
                       const players = pSnap.val() || {};
-                      const allSolved = Object.keys(players).every(n => players[n]?.solved === true);
+                      // スコア更新
                       return battleRef.child(battleRoomId).update(updates)
                         .then(() => {
                           battleToastMsg('正解！ +1点');
                           playCorrectSound();
-                          if (allSolved) {
-                            battleRef.child(battleRoomId).update({
-                              status: 'waiting',
-                              equation: null,
-                              round: battleRound,
-                              votes: {}
-                            }).then(() => {
-                              const resetUpdates = {};
-                              Object.keys(players).forEach(n => { resetUpdates[`players/${n}/ready`] = false; });
-                              battleRef.child(battleRoomId).update(resetUpdates);
-                              battleIsReady = false;
-                              battleReadyBtn.disabled = false;
-                              battleReadyBtn.textContent = '準備OK';
-                              battleToastMsg('次のラウンドへ - 準備OKを押してください');
-                            });
-                          }
+                          // 全員解いたかチェックは listener で行う
                         });
                     });
                 } else {
@@ -2019,7 +2074,6 @@
           updates[`players/${username}`] = null;
           updates[`votes/${username}`] = null;
           battleRef.child(roomId).update(updates).then(() => {
-            // 全員退室したかチェック
             checkAndDeleteRoom(roomId);
           }).catch(() => {});
         }
