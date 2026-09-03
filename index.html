@@ -494,6 +494,66 @@
       box-shadow: 0 1px 0 #0b1e2b;
       pointer-events: none;
     }
+
+    /* メモ機能 */
+    .memo-section {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid #2f4a5e;
+    }
+    .memo-section textarea {
+      width: 100%;
+      background: #0f1e2b;
+      border: 1px solid #2f5066;
+      border-radius: 16px;
+      padding: 12px 14px;
+      color: #e6f2fa;
+      font-size: 0.9rem;
+      resize: vertical;
+      min-height: 60px;
+      max-height: 150px;
+      outline: none;
+      font-family: inherit;
+      line-height: 1.5;
+    }
+    .memo-section textarea:focus {
+      border-color: #5a9ec9;
+    }
+    .memo-section textarea::placeholder {
+      color: #5a7d93;
+    }
+    .memo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      color: #8aacbf;
+      font-size: 0.8rem;
+    }
+    .memo-header span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .memo-header .btn {
+      flex: 0 1 auto;
+      padding: 4px 14px;
+      min-width: auto;
+      font-size: 0.75rem;
+      background: #1f465e;
+      border-bottom: 3px solid #0f2a3b;
+      box-shadow: 0 3px 0 #0b1e2b;
+    }
+    .memo-header .btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 0px 0 #0b1e2b;
+    }
+    .memo-char-count {
+      color: #5a7d93;
+      font-size: 0.7rem;
+      margin-left: 8px;
+    }
+
     @media (max-width: 500px) {
       .app {
         padding: 14px 10px;
@@ -528,6 +588,10 @@
       }
       .battle-room-input input {
         width: 100px;
+      }
+      .memo-section textarea {
+        min-height: 50px;
+        font-size: 0.85rem;
       }
     }
   </style>
@@ -568,6 +632,18 @@
         <button class="btn" id="toggleSoundBtn" style="flex:0 1 auto; padding:4px 16px; min-width:60px; font-size:0.8rem;">オン</button>
       </div>
       <div class="toast" id="toastMessage">挑戦ボタンでスタート</div>
+
+      <!-- メモ -->
+      <div class="memo-section">
+        <div class="memo-header">
+          <span>📝 メモ</span>
+          <span>
+            <button class="btn" id="memoClearBtn">クリア</button>
+            <span class="memo-char-count" id="memoCount">0/500</span>
+          </span>
+        </div>
+        <textarea id="memoText" placeholder="計算メモをここに記入..." maxlength="500"></textarea>
+      </div>
     </div>
 
     <!-- ===== 対戦タブ ===== -->
@@ -620,6 +696,18 @@
       <!-- 結果表示 -->
       <div class="battle-result" id="battleResult" style="display:none;"></div>
       <div class="toast" id="battleToast">対戦相手を待っています</div>
+
+      <!-- メモ -->
+      <div class="memo-section">
+        <div class="memo-header">
+          <span>📝 メモ</span>
+          <span>
+            <button class="btn" id="memoClearBtn2">クリア</button>
+            <span class="memo-char-count" id="memoCount2">0/500</span>
+          </span>
+        </div>
+        <textarea id="memoText2" placeholder="計算メモをここに記入..." maxlength="500"></textarea>
+      </div>
     </div>
 
     <!-- ===== ランキングタブ ===== -->
@@ -637,6 +725,18 @@
         </div>
         <ul class="rank-list" id="rankingList"><li class="empty">読み込み中...</li></ul>
         <div class="footer">Firebase · 一人1記録 · 桁別</div>
+      </div>
+
+      <!-- メモ -->
+      <div class="memo-section">
+        <div class="memo-header">
+          <span>📝 メモ</span>
+          <span>
+            <button class="btn" id="memoClearBtn3">クリア</button>
+            <span class="memo-char-count" id="memoCount3">0/500</span>
+          </span>
+        </div>
+        <textarea id="memoText3" placeholder="計算メモをここに記入..." maxlength="500"></textarea>
       </div>
     </div>
 
@@ -665,6 +765,18 @@
         <div class="delete-section">
           <button class="btn btn-danger" id="deleteAccountBtn" style="min-width:140px;">アカウント削除</button>
         </div>
+      </div>
+
+      <!-- メモ -->
+      <div class="memo-section">
+        <div class="memo-header">
+          <span>📝 メモ</span>
+          <span>
+            <button class="btn" id="memoClearBtn4">クリア</button>
+            <span class="memo-char-count" id="memoCount4">0/500</span>
+          </span>
+        </div>
+        <textarea id="memoText4" placeholder="計算メモをここに記入..." maxlength="500"></textarea>
       </div>
     </div>
   </div>
@@ -831,6 +943,26 @@
       const battleMatchArea = document.getElementById('battleMatchArea');
       const battleQuestionArea = document.getElementById('battleQuestionArea');
 
+      // メモDOM
+      const memoTexts = [
+        document.getElementById('memoText'),
+        document.getElementById('memoText2'),
+        document.getElementById('memoText3'),
+        document.getElementById('memoText4')
+      ];
+      const memoCounts = [
+        document.getElementById('memoCount'),
+        document.getElementById('memoCount2'),
+        document.getElementById('memoCount3'),
+        document.getElementById('memoCount4')
+      ];
+      const memoClearBtns = [
+        document.getElementById('memoClearBtn'),
+        document.getElementById('memoClearBtn2'),
+        document.getElementById('memoClearBtn3'),
+        document.getElementById('memoClearBtn4')
+      ];
+
       const tabBtns = document.querySelectorAll('.tab-btn');
       const tabContents = {
         tabChallenge: document.getElementById('tabChallenge'),
@@ -849,6 +981,8 @@
         if (tabContents[tabId]) {
           tabContents[tabId].classList.add('active');
         }
+        // メモを保存（タブ切り替え時に自動保存）
+        saveAllMemo();
       }
 
       tabBtns.forEach(btn => {
@@ -857,6 +991,53 @@
           if (tabId) switchTab(tabId);
         });
       });
+
+      // ============================================================
+      //  メモ機能 (ローカルストレージ保存)
+      // ============================================================
+      function loadAllMemo() {
+        try {
+          const saved = localStorage.getItem('memo_data');
+          if (saved) {
+            const data = JSON.parse(saved);
+            for (let i = 0; i < memoTexts.length; i++) {
+              if (data[i] !== undefined) {
+                memoTexts[i].value = data[i];
+                updateMemoCount(i);
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      function saveAllMemo() {
+        try {
+          const data = memoTexts.map(t => t.value);
+          localStorage.setItem('memo_data', JSON.stringify(data));
+        } catch (e) {}
+      }
+
+      function updateMemoCount(index) {
+        const len = memoTexts[index].value.length;
+        memoCounts[index].textContent = `${len}/500`;
+      }
+
+      function clearMemo(index) {
+        memoTexts[index].value = '';
+        updateMemoCount(index);
+        saveAllMemo();
+      }
+
+      // メモイベント設定
+      for (let i = 0; i < memoTexts.length; i++) {
+        memoTexts[i].addEventListener('input', function() {
+          updateMemoCount(i);
+          saveAllMemo();
+        });
+        memoClearBtns[i].addEventListener('click', function() {
+          clearMemo(i);
+        });
+      }
 
       // ============================================================
       //  Cookie
@@ -1176,7 +1357,6 @@
         }
       }
 
-      // ランダムマッチング停止
       function stopRandomMatch() {
         if (battleWaitingForMatch) {
           battleWaitingForMatch = false;
@@ -1185,7 +1365,6 @@
         }
       }
 
-      // ギブアップ
       function giveUpBattle() {
         if (!battleRoomId || !battleIsPlaying || battleIsFinished) {
           battleToastMsg('対戦中ではありません');
@@ -1193,13 +1372,11 @@
         }
         if (!confirm('本当にギブアップしますか？')) return;
         const username = getUsername();
-        // 相手に勝利を譲る
         battleRef.child(`${battleRoomId}/players`).once('value')
           .then((snap) => {
             const players = snap.val() || {};
             const opp = Object.keys(players).find(n => n !== username);
             if (opp) {
-              // 相手のスコアを+1して終了
               const updates = {};
               updates[`players/${opp}/score`] = (players[opp]?.score || 0) + 1;
               updates['status'] = 'finished';
@@ -1218,7 +1395,6 @@
           });
       }
 
-      // ルーム作成
       function createBattleRoom() {
         if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
         const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -1254,7 +1430,6 @@
         }
       }
 
-      // ルーム参加
       function joinBattleRoom() {
         if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
         const roomId = roomIdInput.value.trim().toUpperCase();
@@ -1293,7 +1468,6 @@
         }
       }
 
-      // ランダムマッチング
       function randomMatch() {
         if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
         if (battleWaitingForMatch) return;
@@ -1750,6 +1924,7 @@
       function init() {
         loadUsernameFromCookie();
         loadRanking();
+        loadAllMemo();
         isGameActive = false;
         isSolved = false;
         checkBtn.disabled = true;
