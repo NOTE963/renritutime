@@ -449,11 +449,19 @@
       padding: 8px 14px;
       border-radius: 24px;
       color: white;
-      width: 140px;
+      width: 160px;
       outline: none;
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
     }
     .battle-room-input input:focus {
       border-color: #5a9ec9;
+    }
+    .battle-room-input input::placeholder {
+      text-transform: none;
+      letter-spacing: normal;
+      font-size: 0.9rem;
     }
     .battle-room-input .btn {
       flex: 0 1 auto;
@@ -648,7 +656,8 @@
         font-size: 0.9rem;
       }
       .battle-room-input input {
-        width: 100px;
+        width: 110px;
+        font-size: 1rem;
       }
       .memo-section textarea {
         min-height: 50px;
@@ -724,9 +733,9 @@
 
       <div class="battle-room-input">
         <span style="color:#8aacbf;">ルームID:</span>
-        <input type="text" id="roomIdInput" placeholder="部屋番号" />
-        <button class="btn btn-secondary" id="battleJoinBtn">参加</button>
+        <input type="text" id="roomIdInput" placeholder="自由に設定" maxlength="20" />
         <button class="btn btn-primary" id="battleCreateBtn">作成</button>
+        <button class="btn btn-secondary" id="battleJoinBtn">参加</button>
         <button class="btn btn-success" id="battleRandomBtn">ランダム</button>
         <button class="btn btn-stop-match" id="battleStopMatchBtn" style="display:none;">停止</button>
         <span class="battle-room-status" id="roomStatus">-</span>
@@ -1691,6 +1700,10 @@
           resetUpdates['status'] = 'waiting';
           resetUpdates['equation'] = null;
           resetUpdates['votes'] = {};
+          // continueデータも削除
+          usernames.forEach(n => {
+            resetUpdates[`continue/${n}`] = null;
+          });
           battleRef.child(battleRoomId).update(resetUpdates).then(() => {
             battleIsFinished = false;
             battleIsPlaying = false;
@@ -1728,87 +1741,116 @@
 
       function createBattleRoom() {
         if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
-        const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+        let roomId = roomIdInput.value.trim().toUpperCase();
+        if (!roomId) {
+          battleToastMsg('ルームIDを入力してください');
+          return;
+        }
+        // 英数字とアンダースコアのみ許可
+        roomId = roomId.replace(/[^A-Z0-9_]/g, '');
+        if (roomId.length < 1) {
+          battleToastMsg('有効なルームIDを入力してください（英数字と_のみ）');
+          return;
+        }
         roomIdInput.value = roomId;
+
         const username = getUsername();
         battlePlayerId = username;
-        const roomData = {
-          players: { [username]: { ready: false, score: 0, solved: false } },
-          votes: {},
-          winTarget: battleWinTarget,
-          status: 'waiting',
-          equation: null,
-          creator: username,
-          maxPlayers: MAX_PLAYERS,
-          timestamp: Date.now()
-        };
-        if (battleRef) {
-          battleRef.child(roomId).set(roomData)
-            .then(() => {
-              battleRoomId = roomId;
-              roomStatus.textContent = `作成: ${roomId}`;
-              battleToastMsg('ルームを作成しました。参加者を待っています');
-              battleIsMatched = false;
-              battleStopMatchBtn.style.display = 'none';
-              battleContinueArea.style.display = 'none';
-              continuePressed = {};
-              continueStatus.textContent = '';
-              updateBattleAreas();
-              listenBattleRoom(roomId);
-            })
-            .catch((err) => {
-              console.error('作成エラー:', err);
-              battleToastMsg('ルーム作成に失敗しました (エラー: ' + err.message + ')');
-            });
-        } else {
-          battleToastMsg('Firebaseに接続されていません');
-        }
+
+        // 既にルームが存在するかチェック
+        battleRef.child(roomId).once('value')
+          .then((snap) => {
+            if (snap.exists()) {
+              battleToastMsg('このルームIDは既に使用されています');
+              return;
+            }
+            const roomData = {
+              players: { [username]: { ready: false, score: 0, solved: false } },
+              votes: {},
+              winTarget: battleWinTarget,
+              status: 'waiting',
+              equation: null,
+              creator: username,
+              maxPlayers: MAX_PLAYERS,
+              timestamp: Date.now()
+            };
+            return battleRef.child(roomId).set(roomData);
+          })
+          .then(() => {
+            battleRoomId = roomId;
+            roomStatus.textContent = `作成: ${roomId}`;
+            battleToastMsg('ルームを作成しました。参加者を待っています');
+            battleIsMatched = false;
+            battleStopMatchBtn.style.display = 'none';
+            battleContinueArea.style.display = 'none';
+            continuePressed = {};
+            continueStatus.textContent = '';
+            updateBattleAreas();
+            listenBattleRoom(roomId);
+          })
+          .catch((err) => {
+            console.error('作成エラー:', err);
+            battleToastMsg('ルーム作成に失敗しました (エラー: ' + err.message + ')');
+          });
       }
 
       function joinBattleRoom() {
         if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
-        const roomId = roomIdInput.value.trim().toUpperCase();
-        if (!roomId) { battleToastMsg('ルームIDを入力してください'); return; }
+        let roomId = roomIdInput.value.trim().toUpperCase();
+        if (!roomId) {
+          battleToastMsg('ルームIDを入力してください');
+          return;
+        }
+        roomId = roomId.replace(/[^A-Z0-9_]/g, '');
+        if (roomId.length < 1) {
+          battleToastMsg('有効なルームIDを入力してください');
+          return;
+        }
+        roomIdInput.value = roomId;
+
         const username = getUsername();
         battlePlayerId = username;
-        if (battleRef) {
-          battleRef.child(roomId).once('value')
-            .then((snap) => {
-              const data = snap.val();
-              if (!data) { battleToastMsg('ルームが見つかりません'); return; }
-              if (data.players && data.players[username]) { battleToastMsg('この名前は既にルームにいます'); return; }
-              if (data.status === 'playing' || data.status === 'finished') {
-                battleToastMsg('このルームは既に進行中です');
-                return;
-              }
-              const playerCount = Object.keys(data.players || {}).length;
-              if (playerCount >= MAX_PLAYERS) {
-                battleToastMsg('ルームが満員です (最大' + MAX_PLAYERS + '人)');
-                return;
-              }
-              const updates = {};
-              updates[`players/${username}`] = { ready: false, score: 0, solved: false };
-              return battleRef.child(roomId).update(updates);
-            })
-            .then(() => {
-              battleRoomId = roomId;
-              roomStatus.textContent = `参加: ${roomId}`;
-              battleToastMsg('ルームに参加しました');
-              battleIsMatched = false;
-              battleStopMatchBtn.style.display = 'none';
-              battleContinueArea.style.display = 'none';
-              continuePressed = {};
-              continueStatus.textContent = '';
-              updateBattleAreas();
-              listenBattleRoom(roomId);
-            })
-            .catch((err) => {
-              console.error('参加エラー:', err);
-              battleToastMsg('参加に失敗しました (エラー: ' + err.message + ')');
-            });
-        } else {
-          battleToastMsg('Firebaseに接続されていません');
-        }
+
+        battleRef.child(roomId).once('value')
+          .then((snap) => {
+            const data = snap.val();
+            if (!data) {
+              battleToastMsg('ルームが見つかりません');
+              return;
+            }
+            if (data.players && data.players[username]) {
+              battleToastMsg('この名前は既にルームにいます');
+              return;
+            }
+            if (data.status === 'playing' || data.status === 'finished') {
+              battleToastMsg('このルームは既に進行中です');
+              return;
+            }
+            const playerCount = Object.keys(data.players || {}).length;
+            if (playerCount >= MAX_PLAYERS) {
+              battleToastMsg('ルームが満員です (最大' + MAX_PLAYERS + '人)');
+              return;
+            }
+            const updates = {};
+            updates[`players/${username}`] = { ready: false, score: 0, solved: false };
+            return battleRef.child(roomId).update(updates);
+          })
+          .then(() => {
+            battleRoomId = roomId;
+            roomStatus.textContent = `参加: ${roomId}`;
+            battleToastMsg('ルームに参加しました');
+            battleIsMatched = false;
+            battleStopMatchBtn.style.display = 'none';
+            battleContinueArea.style.display = 'none';
+            continuePressed = {};
+            continueStatus.textContent = '';
+            updateBattleAreas();
+            listenBattleRoom(roomId);
+          })
+          .catch((err) => {
+            console.error('参加エラー:', err);
+            battleToastMsg('参加に失敗しました (エラー: ' + err.message + ')');
+          });
       }
 
       function randomMatch() {
