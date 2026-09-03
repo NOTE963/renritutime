@@ -484,6 +484,16 @@
       gap: 10px;
       margin: 8px 0;
     }
+    .btn-stop-match {
+      background: #b14f4f;
+      border-bottom-color: #752f2f;
+    }
+    .btn-stop-match:disabled {
+      opacity: 0.4;
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 #0b1e2b;
+      pointer-events: none;
+    }
     @media (max-width: 500px) {
       .app {
         padding: 14px 10px;
@@ -572,25 +582,27 @@
         <div class="battle-opponent" id="opponentNameDisplay">待機中</div>
       </div>
 
-      <!-- ルーム操作エリア (常時表示) -->
+      <!-- ルーム操作エリア -->
       <div class="battle-room-input">
         <span style="color:#8aacbf;">ルームID:</span>
         <input type="text" id="roomIdInput" placeholder="部屋番号" />
         <button class="btn btn-secondary" id="battleJoinBtn">参加</button>
         <button class="btn btn-primary" id="battleCreateBtn">作成</button>
         <button class="btn btn-success" id="battleRandomBtn">ランダム</button>
+        <button class="btn btn-stop-match" id="battleStopMatchBtn" style="display:none;">停止</button>
         <span class="battle-room-status" id="roomStatus">-</span>
       </div>
 
-      <!-- マッチング後の準備エリア (マッチング後に表示) -->
+      <!-- マッチング後の準備エリア -->
       <div id="battleMatchArea" style="display:none;">
         <div class="battle-waiting-area">
           <button class="btn btn-primary" id="battleReadyBtn">準備OK</button>
+          <button class="btn btn-danger" id="battleGiveUpBtn">ギブアップ</button>
           <button class="btn btn-warning" id="battleExitBtn">退出</button>
         </div>
       </div>
 
-      <!-- 問題表示エリア (マッチング＆準備完了後に表示) -->
+      <!-- 問題表示エリア -->
       <div id="battleQuestionArea" style="display:none;">
         <div class="eq-panel">
           <div class="eq-row"><span id="bEq1a">?</span>x + <span id="bEq1b">?</span>y = <span id="bEq1c">?</span></div>
@@ -803,9 +815,11 @@
       const battleReadyBtn = document.getElementById('battleReadyBtn');
       const battleAnswerBtn = document.getElementById('battleAnswerBtn');
       const battleExitBtn = document.getElementById('battleExitBtn');
+      const battleGiveUpBtn = document.getElementById('battleGiveUpBtn');
       const battleJoinBtn = document.getElementById('battleJoinBtn');
       const battleCreateBtn = document.getElementById('battleCreateBtn');
       const battleRandomBtn = document.getElementById('battleRandomBtn');
+      const battleStopMatchBtn = document.getElementById('battleStopMatchBtn');
       const roomIdInput = document.getElementById('roomIdInput');
       const roomStatus = document.getElementById('roomStatus');
       const battleToast = document.getElementById('battleToast');
@@ -1148,11 +1162,9 @@
         battleResult.textContent = msg;
       }
 
-      // 対戦エリアの表示切替
       function updateBattleAreas() {
         if (battleIsMatched && battleRoomId) {
           battleMatchArea.style.display = 'block';
-          // 準備が完了してラウンドが始まったら問題表示
           if (battleIsPlaying || battleIsFinished) {
             battleQuestionArea.style.display = 'block';
           } else {
@@ -1164,7 +1176,49 @@
         }
       }
 
-      // ルーム作成 (エラーハンドリング強化)
+      // ランダムマッチング停止
+      function stopRandomMatch() {
+        if (battleWaitingForMatch) {
+          battleWaitingForMatch = false;
+          battleStopMatchBtn.style.display = 'none';
+          battleToastMsg('マッチングを停止しました');
+        }
+      }
+
+      // ギブアップ
+      function giveUpBattle() {
+        if (!battleRoomId || !battleIsPlaying || battleIsFinished) {
+          battleToastMsg('対戦中ではありません');
+          return;
+        }
+        if (!confirm('本当にギブアップしますか？')) return;
+        const username = getUsername();
+        // 相手に勝利を譲る
+        battleRef.child(`${battleRoomId}/players`).once('value')
+          .then((snap) => {
+            const players = snap.val() || {};
+            const opp = Object.keys(players).find(n => n !== username);
+            if (opp) {
+              // 相手のスコアを+1して終了
+              const updates = {};
+              updates[`players/${opp}/score`] = (players[opp]?.score || 0) + 1;
+              updates['status'] = 'finished';
+              return battleRef.child(battleRoomId).update(updates);
+            }
+          })
+          .then(() => {
+            battleToastMsg('ギブアップしました');
+            showBattleResult(`あなたはギブアップしました。${battleOpponentName} の勝利！`);
+            battleIsFinished = true;
+            battleReadyBtn.disabled = true;
+            battleAnswerBtn.disabled = true;
+          })
+          .catch((err) => {
+            battleToastMsg('ギブアップエラー: ' + err.message);
+          });
+      }
+
+      // ルーム作成
       function createBattleRoom() {
         if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
         const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -1187,6 +1241,7 @@
               roomStatus.textContent = `作成: ${roomId}`;
               battleToastMsg('ルームを作成しました。相手の参加を待っています');
               battleIsMatched = false;
+              battleStopMatchBtn.style.display = 'none';
               updateBattleAreas();
               listenBattleRoom(roomId);
             })
@@ -1225,6 +1280,7 @@
               roomStatus.textContent = `参加: ${roomId}`;
               battleToastMsg('ルームに参加しました');
               battleIsMatched = false;
+              battleStopMatchBtn.style.display = 'none';
               updateBattleAreas();
               listenBattleRoom(roomId);
             })
@@ -1237,16 +1293,21 @@
         }
       }
 
-      // ランダムマッチング (エラーハンドリング強化)
+      // ランダムマッチング
       function randomMatch() {
         if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
         if (battleWaitingForMatch) return;
         battleWaitingForMatch = true;
+        battleStopMatchBtn.style.display = 'inline-block';
         battleToastMsg('マッチング中...');
         const username = getUsername();
 
         battleRef.orderByChild('status').equalTo('waiting').limitToFirst(1).once('value')
           .then((snap) => {
+            if (!battleWaitingForMatch) {
+              battleStopMatchBtn.style.display = 'none';
+              return;
+            }
             const data = snap.val();
             let found = false;
             if (data) {
@@ -1260,11 +1321,16 @@
                   updates[`players/${username}`] = { ready: false, score: 0, solved: false };
                   return battleRef.child(key).update(updates)
                     .then(() => {
+                      if (!battleWaitingForMatch) {
+                        battleStopMatchBtn.style.display = 'none';
+                        return;
+                      }
                       battleRoomId = key;
                       roomIdInput.value = key;
                       roomStatus.textContent = `参加: ${key}`;
                       battleToastMsg('マッチング成功！');
                       battleWaitingForMatch = false;
+                      battleStopMatchBtn.style.display = 'none';
                       battleIsMatched = false;
                       updateBattleAreas();
                       listenBattleRoom(key);
@@ -1273,8 +1339,7 @@
                 }
               }
             }
-            // 見つからなかったら新規作成
-            if (!found) {
+            if (!found && battleWaitingForMatch) {
               const newRoomId = Math.random().toString(36).substring(2, 8).toUpperCase();
               roomIdInput.value = newRoomId;
               const roomData = {
@@ -1288,10 +1353,15 @@
               };
               return battleRef.child(newRoomId).set(roomData)
                 .then(() => {
+                  if (!battleWaitingForMatch) {
+                    battleStopMatchBtn.style.display = 'none';
+                    return;
+                  }
                   battleRoomId = newRoomId;
                   roomStatus.textContent = `作成: ${newRoomId}`;
                   battleToastMsg('ルームを作成しました。相手を待っています');
                   battleWaitingForMatch = false;
+                  battleStopMatchBtn.style.display = 'none';
                   battleIsMatched = false;
                   updateBattleAreas();
                   listenBattleRoom(newRoomId);
@@ -1302,6 +1372,7 @@
             console.error('マッチングエラー:', err);
             battleToastMsg('マッチングエラー: ' + err.message);
             battleWaitingForMatch = false;
+            battleStopMatchBtn.style.display = 'none';
           });
       }
 
@@ -1323,7 +1394,6 @@
           if (opp) {
             battleOpponentName = opp;
             opponentNameDisplay.textContent = opp;
-            // マッチング成立
             if (!battleIsMatched && usernames.length === 2) {
               battleIsMatched = true;
               updateBattleAreas();
@@ -1355,7 +1425,6 @@
             }
           }
 
-          // 準備状態の確認
           if (data.status === 'waiting') {
             const allReady = usernames.every(n => players[n] && players[n].ready === true);
             const allExist = usernames.length === 2;
@@ -1375,7 +1444,6 @@
             }
           }
 
-          // 勝敗判定
           if (data.status === 'finished' || data.round >= data.maxRound) {
             battleIsFinished = true;
             let winner = '';
@@ -1394,7 +1462,6 @@
             }
           }
 
-          // 相手が先に解いたら通知
           if (opp && players[opp] && players[opp].solved === true && !players[username]?.solved) {
             if (battleIsPlaying && !battleIsFinished && !battleOppSolved) {
               battleOppSolved = true;
@@ -1406,7 +1473,6 @@
             battleMySolved = true;
           }
 
-          // 更新
           updateBattleAreas();
         });
       }
@@ -1514,6 +1580,7 @@
         battleOppSolved = false;
         battleWaitingForMatch = false;
         battleIsMatched = false;
+        battleStopMatchBtn.style.display = 'none';
         roomStatus.textContent = '-';
         opponentNameDisplay.textContent = '待機中';
         battleResult.style.display = 'none';
@@ -1662,9 +1729,11 @@
       battleCreateBtn.addEventListener('click', createBattleRoom);
       battleJoinBtn.addEventListener('click', joinBattleRoom);
       battleRandomBtn.addEventListener('click', randomMatch);
+      battleStopMatchBtn.addEventListener('click', stopRandomMatch);
       battleReadyBtn.addEventListener('click', setBattleReady);
       battleAnswerBtn.addEventListener('click', battleAnswer);
       battleExitBtn.addEventListener('click', exitBattleRoom);
+      battleGiveUpBtn.addEventListener('click', giveUpBattle);
 
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
