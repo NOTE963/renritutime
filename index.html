@@ -1079,26 +1079,55 @@
       }
 
       // ============================================================
-      //  問題生成
+      //  問題生成 (全て整数解)
       // ============================================================
       function generateEquation() {
         const digit = getDigit();
         const maxVal = Math.pow(10, digit) - 1;
         const minVal = digit === 1 ? -9 : -(maxVal);
-        let x, y, a1, b1, c1, a2, b2, c2, attempts = 0;
+
+        let x, y, a1, b1, c1, a2, b2, c2;
+        let attempts = 0;
+
         do {
+          // 整数解を先に決める
           x = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
           y = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+
+          // 係数をランダムに（0を避ける）
           a1 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
           b1 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
           a2 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
           b2 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+
+          // 係数が0の場合は再生成
+          if (a1 === 0) a1 = 1;
+          if (b1 === 0) b1 = 1;
+          if (a2 === 0) a2 = 1;
+          if (b2 === 0) b2 = 1;
+
+          // 係数が同じにならないように調整
+          if (a1 === a2 && b1 === b2) {
+            a2 = (a2 + 1) % (maxVal + 1);
+            if (a2 === 0) a2 = 1;
+            b2 = (b2 + 1) % (maxVal + 1);
+            if (b2 === 0) b2 = 1;
+          }
+
+          // 解から右辺を計算
           c1 = a1 * x + b1 * y;
           c2 = a2 * x + b2 * y;
+
           attempts++;
-        } while ((a1 === 0 && b1 === 0) || (a2 === 0 && b2 === 0) ||
-          (a1 === a2 && b1 === b2 && c1 === c2) || attempts < 20 ||
-          Math.abs(c1) > 1000000 || Math.abs(c2) > 1000000);
+        } while (
+          (a1 === 0 && b1 === 0) ||
+          (a2 === 0 && b2 === 0) ||
+          attempts < 10 ||
+          Math.abs(c1) > 1000000 ||
+          Math.abs(c2) > 1000000 ||
+          (a1 === a2 && b1 === b2)
+        );
+
         return { a1, b1, c1, a2, b2, c2, solutionX: x, solutionY: y };
       }
 
@@ -1274,20 +1303,43 @@
         const digit = getDigit();
         const maxVal = Math.pow(10, digit) - 1;
         const minVal = digit === 1 ? -9 : -(maxVal);
-        let x, y, a1, b1, c1, a2, b2, c2, attempts = 0;
+
+        let x, y, a1, b1, c1, a2, b2, c2;
+        let attempts = 0;
+
         do {
           x = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
           y = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+
           a1 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
           b1 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
           a2 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
           b2 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+
+          if (a1 === 0) a1 = 1;
+          if (b1 === 0) b1 = 1;
+          if (a2 === 0) a2 = 1;
+          if (b2 === 0) b2 = 1;
+
+          if (a1 === a2 && b1 === b2) {
+            a2 = (a2 + 1) % (maxVal + 1);
+            if (a2 === 0) a2 = 1;
+            b2 = (b2 + 1) % (maxVal + 1);
+            if (b2 === 0) b2 = 1;
+          }
+
           c1 = a1 * x + b1 * y;
           c2 = a2 * x + b2 * y;
           attempts++;
-        } while ((a1 === 0 && b1 === 0) || (a2 === 0 && b2 === 0) ||
-          (a1 === a2 && b1 === b2 && c1 === c2) || attempts < 20 ||
-          Math.abs(c1) > 1000000 || Math.abs(c2) > 1000000);
+        } while (
+          (a1 === 0 && b1 === 0) ||
+          (a2 === 0 && b2 === 0) ||
+          attempts < 10 ||
+          Math.abs(c1) > 1000000 ||
+          Math.abs(c2) > 1000000 ||
+          (a1 === a2 && b1 === b2)
+        );
+
         return { a1, b1, c1, a2, b2, c2, solutionX: x, solutionY: y };
       }
 
@@ -1450,7 +1502,6 @@
         }
       }
 
-      // ランダムマッチング - リトライ機能付き（最大10回まで）
       function randomMatch() {
         if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
         if (battleWaitingForMatch) return;
@@ -1471,7 +1522,6 @@
 
         const username = getUsername();
 
-        // 待機中のルームを検索
         battleRef.orderByChild('status').equalTo('waiting').limitToFirst(5).once('value')
           .then((snap) => {
             if (!battleWaitingForMatch) {
@@ -1485,7 +1535,6 @@
 
             if (data) {
               const keys = Object.keys(data);
-              // ランダムにシャッフルして、自分の入っていないルームを探す
               const shuffledKeys = keys.sort(() => Math.random() - 0.5);
               for (let key of shuffledKeys) {
                 const room = data[key];
@@ -1499,7 +1548,6 @@
             }
 
             if (matchedRoomKey) {
-              // ルームに参加
               const updates = {};
               updates[`players/${username}`] = { ready: false, score: 0, solved: false };
               return battleRef.child(matchedRoomKey).update(updates)
@@ -1524,7 +1572,6 @@
                   listenBattleRoom(matchedRoomKey);
                 });
             } else {
-              // 見つからなかった場合はリトライ
               matchRetryCount++;
               if (matchRetryCount >= 10) {
                 battleWaitingForMatch = false;
@@ -1539,7 +1586,6 @@
 
               battleToastMsg('マッチング中... (リトライ ' + (matchRetryCount + 1) + '/10)');
 
-              // 1.5秒後に再試行
               if (matchTimeout) clearTimeout(matchTimeout);
               matchTimeout = setTimeout(() => {
                 if (battleWaitingForMatch) {
@@ -1550,7 +1596,6 @@
           })
           .catch((err) => {
             console.error('マッチングエラー:', err);
-            // エラーの場合はリトライ
             matchRetryCount++;
             if (matchRetryCount < 10) {
               battleToastMsg('マッチング中... (リトライ ' + (matchRetryCount + 1) + '/10)');
