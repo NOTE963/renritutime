@@ -573,6 +573,41 @@
       border-color: #2a8266;
       background: #1a4a3a;
     }
+    .vote-area {
+      background: #0f1e2b;
+      border-radius: 24px;
+      padding: 18px 16px;
+      margin: 12px 0;
+      border: 1px solid #2d4a5e;
+    }
+    .vote-area h3 {
+      color: #c8e0ef;
+      font-size: 1rem;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .vote-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    .vote-buttons .btn {
+      flex: 0 1 auto;
+      min-width: 60px;
+      padding: 8px 18px;
+      font-size: 0.9rem;
+    }
+    .vote-buttons .btn.selected {
+      background: #2a8266;
+      border-bottom-color: #18523f;
+    }
+    .vote-status {
+      text-align: center;
+      color: #8aacbf;
+      font-size: 0.85rem;
+      margin-top: 10px;
+    }
     @media (max-width: 500px) {
       .app {
         padding: 14px 10px;
@@ -611,6 +646,11 @@
       .memo-section textarea {
         min-height: 50px;
         font-size: 0.85rem;
+      }
+      .vote-buttons .btn {
+        min-width: 50px;
+        padding: 6px 12px;
+        font-size: 0.8rem;
       }
     }
   </style>
@@ -673,7 +713,6 @@
         <div class="battle-opponent" id="opponentNameDisplay">待機中</div>
       </div>
 
-      <!-- プレイヤーリスト -->
       <div class="player-list" id="playerList"></div>
 
       <div class="battle-room-input">
@@ -685,6 +724,20 @@
         <button class="btn btn-stop-match" id="battleStopMatchBtn" style="display:none;">停止</button>
         <span class="battle-room-status" id="roomStatus">-</span>
       </div>
+
+      <!-- 投票エリア -->
+      <div id="voteArea" class="vote-area" style="display:none;">
+        <h3>📊 桁数に投票してください</h3>
+        <div class="vote-buttons" id="voteButtons">
+          <button class="btn" data-digit="1">1桁</button>
+          <button class="btn" data-digit="2">2桁</button>
+          <button class="btn" data-digit="3">3桁</button>
+          <button class="btn" data-digit="4">4桁</button>
+          <button class="btn" data-digit="5">5桁</button>
+        </div>
+        <div class="vote-status" id="voteStatus">投票待機中...</div>
+      </div>
+
       <div id="battleMatchArea" style="display:none;">
         <div class="battle-waiting-area">
           <button class="btn btn-primary" id="battleReadyBtn">準備OK</button>
@@ -692,6 +745,7 @@
           <button class="btn btn-warning" id="battleExitBtn">退出</button>
         </div>
       </div>
+
       <div id="battleQuestionArea" style="display:none;">
         <div class="eq-panel">
           <div class="eq-row"><span id="bEq1a">?</span>x + <span id="bEq1b">?</span>y = <span id="bEq1c">?</span></div>
@@ -705,6 +759,7 @@
           <button class="btn btn-success" id="battleAnswerBtn">解答</button>
         </div>
       </div>
+
       <div class="battle-result" id="battleResult" style="display:none;"></div>
       <div class="toast" id="battleToast">対戦相手を待っています</div>
       <div class="memo-section">
@@ -947,6 +1002,9 @@
       const battleMatchArea = document.getElementById('battleMatchArea');
       const battleQuestionArea = document.getElementById('battleQuestionArea');
       const playerListEl = document.getElementById('playerList');
+      const voteArea = document.getElementById('voteArea');
+      const voteButtons = document.getElementById('voteButtons');
+      const voteStatus = document.getElementById('voteStatus');
 
       const memoTexts = [
         document.getElementById('memoText'),
@@ -1086,6 +1144,10 @@
       let matchTimeout = null;
       const MAX_PLAYERS = 4;
 
+      // 投票関連
+      let myVote = null;
+      let voteResults = {};
+
       // ============================================================
       //  設定
       // ============================================================
@@ -1109,8 +1171,8 @@
       // ============================================================
       //  問題生成 (全て整数解)
       // ============================================================
-      function generateEquation() {
-        const digit = getDigit();
+      function generateEquation(forcedDigit) {
+        const digit = forcedDigit || getDigit();
         const maxVal = Math.pow(10, digit) - 1;
         const minVal = digit === 1 ? -9 : -(maxVal);
 
@@ -1313,7 +1375,7 @@
       }
 
       // ============================================================
-      //  対戦モード (最大4人)
+      //  対戦モード (投票式)
       // ============================================================
       function battleToastMsg(msg) {
         battleToast.textContent = msg;
@@ -1322,8 +1384,8 @@
         }, 3000);
       }
 
-      function generateBattleEquation() {
-        const digit = getDigit();
+      function generateBattleEquation(forcedDigit) {
+        const digit = forcedDigit || getDigit();
         const maxVal = Math.pow(10, digit) - 1;
         const minVal = digit === 1 ? -9 : -(maxVal);
 
@@ -1383,7 +1445,6 @@
 
       function updateBattleUI() {
         yourScoreEl.textContent = battleYourScore;
-        // opponentScoreは自分以外の全員の合計スコアを表示（簡易的に）
         opponentScoreEl.textContent = battleOppScore;
         battleRoundEl.textContent = battleRound;
         if (battleOpponentName) opponentNameDisplay.textContent = battleOpponentName;
@@ -1424,7 +1485,6 @@
           tag.textContent = name + (players[name] && players[name].ready ? ' ✓' : '');
           playerListEl.appendChild(tag);
         });
-        // 空き枠表示
         for (let i = names.length; i < MAX_PLAYERS; i++) {
           const tag = document.createElement('span');
           tag.className = 'player-tag';
@@ -1432,6 +1492,77 @@
           tag.style.opacity = '0.4';
           playerListEl.appendChild(tag);
         }
+      }
+
+      // 投票表示更新
+      function updateVoteDisplay(votes, players) {
+        if (!votes) return;
+        const username = getUsername();
+        // 自分の投票状況
+        if (votes[username]) {
+          myVote = votes[username];
+        }
+
+        // 投票結果集計
+        const counts = {};
+        const totalVoters = Object.keys(votes).length;
+        Object.values(votes).forEach(d => {
+          counts[d] = (counts[d] || 0) + 1;
+        });
+
+        // 投票ボタンのハイライト
+        const btns = voteButtons.querySelectorAll('.btn');
+        btns.forEach(btn => {
+          const digit = parseInt(btn.dataset.digit);
+          btn.classList.toggle('selected', myVote === digit);
+        });
+
+        // 投票状況表示
+        let statusText = `投票済み: ${totalVoters}/${Object.keys(players || {}).length}人`;
+        if (totalVoters > 0) {
+          const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+          const detail = sorted.map(([d, c]) => `${d}桁(${c}票)`).join(' ');
+          statusText += ' | ' + detail;
+        }
+        voteStatus.textContent = statusText;
+
+        // 全員投票完了したら確定
+        const playerCount = Object.keys(players || {}).length;
+        if (totalVoters >= playerCount && playerCount >= 2) {
+          // 最多投票の桁数を決定
+          let maxCount = 0;
+          let winnerDigit = 3;
+          for (const [d, c] of Object.entries(counts)) {
+            if (c > maxCount) {
+              maxCount = c;
+              winnerDigit = parseInt(d);
+            }
+          }
+          voteStatus.textContent += ` → 決定: ${winnerDigit}桁！`;
+          // 式を生成して開始
+          startBattleWithDigit(winnerDigit);
+        }
+      }
+
+      function startBattleWithDigit(digit) {
+        const eq = generateBattleEquation(digit);
+        battleRef.child(`${battleRoomId}/equation`).set(eq).then(() => {
+          battleRef.child(`${battleRoomId}/status`).set('playing');
+          battleRef.child(`${battleRoomId}/round`).set(battleRound + 1);
+          // 全員のsolvedをリセット
+          battleRef.child(`${battleRoomId}/players`).once('value', (snap) => {
+            const players = snap.val() || {};
+            const updates = {};
+            Object.keys(players).forEach(n => {
+              updates[`players/${n}/solved`] = false;
+            });
+            battleRef.child(battleRoomId).update(updates);
+          });
+          // 投票エリア非表示
+          voteArea.style.display = 'none';
+          battleToastMsg(`ラウンド ${battleRound + 1} スタート！ (${digit}桁)`);
+          playStartSound();
+        });
       }
 
       function stopRandomMatch() {
@@ -1487,6 +1618,7 @@
         battlePlayerId = username;
         const roomData = {
           players: { [username]: { ready: false, score: 0, solved: false } },
+          votes: {},
           round: 0,
           maxRound: 3,
           status: 'waiting',
@@ -1596,7 +1728,6 @@
                 const room = data[key];
                 const players = room.players || {};
                 const usernames = Object.keys(players);
-                // 自分が入っていない、かつ定員に達していないルームを探す
                 if (!players[username] && usernames.length < MAX_PLAYERS) {
                   matchedRoomKey = key;
                   break;
@@ -1688,15 +1819,12 @@
           const usernames = Object.keys(players);
           const username = getUsername();
 
-          // プレイヤーリスト表示
           renderPlayerList(players);
 
-          // 自分以外のプレイヤー名を表示（カンマ区切り）
           const others = usernames.filter(n => n !== username);
           if (others.length > 0) {
             battleOpponentName = others.join(', ');
             opponentNameDisplay.textContent = battleOpponentName;
-            // マッチング判定（2人以上）
             if (!battleIsMatched && usernames.length >= 2) {
               battleIsMatched = true;
               updateBattleAreas();
@@ -1711,7 +1839,6 @@
 
           if (players[username]) battleYourScore = players[username].score || 0;
 
-          // 他のプレイヤーのスコア合計
           let totalOppScore = 0;
           others.forEach(n => {
             totalOppScore += players[n]?.score || 0;
@@ -1721,11 +1848,22 @@
           battleRound = data.round || 0;
           updateBattleUI();
 
+          // 投票表示
+          const votes = data.votes || {};
+          const isVotingPhase = data.status === 'voting' || (data.status === 'waiting' && usernames.length >= 2);
+          if (isVotingPhase && !data.equation) {
+            voteArea.style.display = 'block';
+            updateVoteDisplay(votes, players);
+          } else {
+            voteArea.style.display = 'none';
+          }
+
           if (data.equation) {
             setBattleEquation(data.equation);
             battleIsPlaying = true;
             battleReadyBtn.disabled = true;
             battleQuestionArea.style.display = 'block';
+            voteArea.style.display = 'none';
           } else {
             battleIsPlaying = false;
             battleReadyBtn.disabled = false;
@@ -1734,23 +1872,12 @@
             }
           }
 
-          if (data.status === 'waiting') {
-            // 全員が準備完了かつ2人以上いる場合
+          if (data.status === 'waiting' && usernames.length >= 2) {
+            // 全員準備完了なら投票フェーズへ
             const allReady = usernames.every(n => players[n] && players[n].ready === true);
-            const enoughPlayers = usernames.length >= 2;
-            if (enoughPlayers && allReady && data.round < data.maxRound) {
-              const eq = generateBattleEquation();
-              battleRef.child(roomId).update({
-                equation: eq,
-                status: 'playing',
-                round: data.round + 1
-              }).then(() => {
-                const resetUpdates = {};
-                usernames.forEach(n => { resetUpdates[`players/${n}/solved`] = false; });
-                battleRef.child(roomId).update(resetUpdates);
-                battleToastMsg(`ラウンド ${data.round + 1} スタート！`);
-                playStartSound();
-              });
+            if (allReady && !data.equation && data.status !== 'voting') {
+              battleRef.child(roomId).update({ status: 'voting' });
+              battleToastMsg('投票フェーズ開始！ 桁数を選んでください');
             }
           }
 
@@ -1772,7 +1899,6 @@
             }
           }
 
-          // 誰かが先に解いたら通知
           if (battleIsPlaying && !battleIsFinished) {
             const solvedOthers = others.filter(n => players[n] && players[n].solved === true);
             if (solvedOthers.length > 0 && !players[username]?.solved) {
@@ -1787,6 +1913,20 @@
 
           updateBattleAreas();
         });
+      }
+
+      // 投票処理
+      function handleVote(digit) {
+        if (!battleRoomId) return;
+        const username = getUsername();
+        myVote = digit;
+        battleRef.child(`${battleRoomId}/votes/${username}`).set(digit)
+          .then(() => {
+            battleToastMsg(`${digit}桁に投票しました`);
+          })
+          .catch((err) => {
+            battleToastMsg('投票エラー: ' + err.message);
+          });
       }
 
       function setBattleReady() {
@@ -1837,10 +1977,12 @@
                           battleToastMsg('正解！ +1点');
                           playCorrectSound();
                           if (allSolved) {
+                            // 次のラウンドへ - 準備リセットして投票フェーズに戻る
                             battleRef.child(battleRoomId).update({
                               status: 'waiting',
                               equation: null,
-                              round: battleRound
+                              round: battleRound,
+                              votes: {}
                             }).then(() => {
                               const resetUpdates = {};
                               Object.keys(players).forEach(n => { resetUpdates[`players/${n}/ready`] = false; });
@@ -1848,7 +1990,7 @@
                               battleIsReady = false;
                               battleReadyBtn.disabled = false;
                               battleReadyBtn.textContent = '準備OK';
-                              battleToastMsg('次のラウンドへ');
+                              battleToastMsg('次のラウンドへ - 準備OKを押してください');
                             });
                           }
                         });
@@ -1875,6 +2017,7 @@
                 const username = getUsername();
                 const updates = {};
                 updates[`players/${username}`] = null;
+                updates[`votes/${username}`] = null;
                 battleRef.child(battleRoomId).update(updates);
               }
             })
@@ -1892,6 +2035,8 @@
         battleOppSolved = false;
         battleWaitingForMatch = false;
         battleIsMatched = false;
+        myVote = null;
+        voteResults = {};
         battleStopMatchBtn.style.display = 'none';
         if (matchTimeout) {
           clearTimeout(matchTimeout);
@@ -1903,6 +2048,7 @@
         battleResult.style.display = 'none';
         battleResult.textContent = '';
         playerListEl.innerHTML = '';
+        voteArea.style.display = 'none';
         updateBattleUI();
         bEq1a.textContent = '?';
         bEq1b.textContent = '?';
@@ -2052,6 +2198,15 @@
       battleAnswerBtn.addEventListener('click', battleAnswer);
       battleExitBtn.addEventListener('click', exitBattleRoom);
       battleGiveUpBtn.addEventListener('click', giveUpBattle);
+
+      // 投票ボタン
+      voteButtons.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn');
+        if (!btn) return;
+        const digit = parseInt(btn.dataset.digit);
+        if (isNaN(digit)) return;
+        handleVote(digit);
+      });
 
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
