@@ -150,32 +150,32 @@
       margin-top: 8px;
     }
 
-    /* ===== グループ管理エリア ===== */
-    .group-manage-area {
+    /* ===== ルーム管理エリア（グループ=ルーム） ===== */
+    .room-manage-area {
       background: #0f1e2b;
       border-radius: 24px;
       padding: 16px;
       margin-top: 12px;
       border: 1px solid #2d4a5e;
     }
-    .group-manage-area h4 {
+    .room-manage-area h4 {
       color: #c8e0ef;
       font-size: 0.9rem;
       margin-bottom: 10px;
     }
-    .group-manage-area .row {
+    .room-manage-area .row {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       align-items: center;
       margin-bottom: 6px;
     }
-    .group-manage-area .row label {
+    .room-manage-area .row label {
       color: #8aacbf;
       font-size: 0.8rem;
       min-width: 100px;
     }
-    .group-manage-area .row input {
+    .room-manage-area .row input {
       background: #162b3a;
       border: 1px solid #2f5066;
       padding: 6px 12px;
@@ -186,24 +186,24 @@
       flex: 1;
       min-width: 120px;
     }
-    .group-manage-area .row input:focus {
+    .room-manage-area .row input:focus {
       border-color: #5a9ec9;
     }
-    .group-manage-area .btn-danger {
+    .room-manage-area .btn-danger {
       background: #b14f4f;
       border-bottom-color: #752f2f;
     }
-    .group-manage-area .btn-success {
+    .room-manage-area .btn-success {
       background: #2a8266;
       border-bottom-color: #18523f;
     }
-    .group-list {
+    .room-list {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       margin-top: 8px;
     }
-    .group-tag {
+    .room-tag {
       background: #1a3343;
       padding: 4px 14px;
       border-radius: 20px;
@@ -214,16 +214,16 @@
       align-items: center;
       gap: 8px;
     }
-    .group-tag .del-btn {
+    .room-tag .del-btn {
       cursor: pointer;
       color: #f5a3a3;
       font-weight: bold;
       font-size: 1rem;
     }
-    .group-tag .del-btn:hover {
+    .room-tag .del-btn:hover {
       color: #ff6b6b;
     }
-    .group-status {
+    .room-status-text {
       color: #7b9eb3;
       font-size: 0.75rem;
       margin-top: 8px;
@@ -1074,16 +1074,16 @@
           <button class="btn btn-danger" id="deleteAccountBtn" style="min-width:140px;">アカウント削除</button>
         </div>
 
-        <!-- グループ管理エリア -->
-        <div class="group-manage-area">
-          <h4>📁 グループ管理（最大3つまで作成可能）</h4>
+        <!-- ルーム管理エリア（グループ=ルーム） -->
+        <div class="room-manage-area">
+          <h4>📁 ルーム管理（最大3つまで作成可能）</h4>
           <div class="row">
-            <label>グループ名</label>
-            <input type="text" id="groupNameInput" placeholder="グループ名を入力" maxlength="20" />
-            <button class="btn btn-success" id="createGroupBtn" style="flex:0 1 auto; padding:6px 14px;">作成</button>
+            <label>ルーム名</label>
+            <input type="text" id="roomNameInput" placeholder="ルーム名を入力" maxlength="20" />
+            <button class="btn btn-success" id="createRoomBtn" style="flex:0 1 auto; padding:6px 14px;">作成</button>
           </div>
-          <div class="group-list" id="groupList"></div>
-          <div class="group-status" id="groupStatus">グループは作成されていません</div>
+          <div class="room-list" id="roomList"></div>
+          <div class="room-status-text" id="roomStatusText">ルームは作成されていません</div>
         </div>
 
         <!-- 引き継ぎエリア -->
@@ -1129,43 +1129,43 @@
 
   <script>
     // ============================================================
-    //  グループ管理機能
+    //  ルーム管理機能（グループ=ルーム）
     // ============================================================
     (function() {
-      const MAX_GROUPS = 3;
-      const GROUPS_KEY = 'user_groups';
+      const MAX_ROOMS = 3;
+      const ROOMS_KEY = 'user_rooms';
 
-      // グループデータを取得
-      function getGroups() {
+      // ルームデータを取得
+      function getRooms() {
         try {
-          const data = localStorage.getItem(GROUPS_KEY);
+          const data = localStorage.getItem(ROOMS_KEY);
           return data ? JSON.parse(data) : [];
         } catch (e) {
           return [];
         }
       }
 
-      // グループデータを保存
-      function saveGroups(groups) {
-        localStorage.setItem(GROUPS_KEY, JSON.stringify(groups));
-        renderGroups();
-        updateGroupStatus(groups);
+      // ルームデータを保存
+      function saveRooms(rooms) {
+        localStorage.setItem(ROOMS_KEY, JSON.stringify(rooms));
+        renderRooms();
+        updateRoomStatus(rooms);
       }
 
-      // グループ一覧を表示
-      function renderGroups() {
-        const container = document.getElementById('groupList');
-        const groups = getGroups();
+      // ルーム一覧を表示
+      function renderRooms() {
+        const container = document.getElementById('roomList');
+        const rooms = getRooms();
         container.innerHTML = '';
-        if (groups.length === 0) {
-          container.innerHTML = '<span style="color:#5a7d93; font-size:0.8rem;">グループがありません</span>';
+        if (rooms.length === 0) {
+          container.innerHTML = '<span style="color:#5a7d93; font-size:0.8rem;">ルームがありません</span>';
           return;
         }
-        groups.forEach((group, index) => {
+        rooms.forEach((room, index) => {
           const tag = document.createElement('span');
-          tag.className = 'group-tag';
+          tag.className = 'room-tag';
           tag.innerHTML = `
-            ${group}
+            ${room}
             <span class="del-btn" data-index="${index}">✕</span>
           `;
           container.appendChild(tag);
@@ -1175,78 +1175,78 @@
         container.querySelectorAll('.del-btn').forEach(el => {
           el.addEventListener('click', function() {
             const index = parseInt(this.dataset.index);
-            deleteGroup(index);
+            deleteRoom(index);
           });
         });
       }
 
-      // グループの状態を更新
-      function updateGroupStatus(groups) {
-        const statusEl = document.getElementById('groupStatus');
-        const count = groups ? groups.length : getGroups().length;
-        statusEl.textContent = `グループ: ${count}/${MAX_GROUPS} 作成済み`;
-        statusEl.style.color = count >= MAX_GROUPS ? '#f5a3a3' : '#7b9eb3';
+      // ルームの状態を更新
+      function updateRoomStatus(rooms) {
+        const statusEl = document.getElementById('roomStatusText');
+        const count = rooms ? rooms.length : getRooms().length;
+        statusEl.textContent = `ルーム: ${count}/${MAX_ROOMS} 作成済み`;
+        statusEl.style.color = count >= MAX_ROOMS ? '#f5a3a3' : '#7b9eb3';
       }
 
-      // グループを作成
-      function createGroup() {
-        const input = document.getElementById('groupNameInput');
+      // ルームを作成
+      function createRoom() {
+        const input = document.getElementById('roomNameInput');
         const name = input.value.trim();
         if (!name) {
-          document.getElementById('groupStatus').textContent = '⚠️ グループ名を入力してください';
-          document.getElementById('groupStatus').style.color = '#f5a3a3';
+          document.getElementById('roomStatusText').textContent = '⚠️ ルーム名を入力してください';
+          document.getElementById('roomStatusText').style.color = '#f5a3a3';
           return;
         }
 
-        const groups = getGroups();
-        if (groups.length >= MAX_GROUPS) {
-          document.getElementById('groupStatus').textContent = `⚠️ グループは最大${MAX_GROUPS}つまでです`;
-          document.getElementById('groupStatus').style.color = '#f5a3a3';
+        const rooms = getRooms();
+        if (rooms.length >= MAX_ROOMS) {
+          document.getElementById('roomStatusText').textContent = `⚠️ ルームは最大${MAX_ROOMS}つまでです`;
+          document.getElementById('roomStatusText').style.color = '#f5a3a3';
           return;
         }
 
-        if (groups.includes(name)) {
-          document.getElementById('groupStatus').textContent = '⚠️ 同じ名前のグループが既に存在します';
-          document.getElementById('groupStatus').style.color = '#f5a3a3';
+        if (rooms.includes(name)) {
+          document.getElementById('roomStatusText').textContent = '⚠️ 同じ名前のルームが既に存在します';
+          document.getElementById('roomStatusText').style.color = '#f5a3a3';
           return;
         }
 
-        groups.push(name);
-        saveGroups(groups);
+        rooms.push(name);
+        saveRooms(rooms);
         input.value = '';
-        document.getElementById('groupStatus').textContent = `✅ グループ「${name}」を作成しました`;
-        document.getElementById('groupStatus').style.color = '#7bc9a0';
+        document.getElementById('roomStatusText').textContent = `✅ ルーム「${name}」を作成しました`;
+        document.getElementById('roomStatusText').style.color = '#7bc9a0';
       }
 
-      // グループを削除
-      function deleteGroup(index) {
-        const groups = getGroups();
-        const name = groups[index];
-        if (!confirm(`グループ「${name}」を削除しますか？`)) return;
-        groups.splice(index, 1);
-        saveGroups(groups);
-        document.getElementById('groupStatus').textContent = `✅ グループ「${name}」を削除しました`;
-        document.getElementById('groupStatus').style.color = '#7bc9a0';
+      // ルームを削除
+      function deleteRoom(index) {
+        const rooms = getRooms();
+        const name = rooms[index];
+        if (!confirm(`ルーム「${name}」を削除しますか？`)) return;
+        rooms.splice(index, 1);
+        saveRooms(rooms);
+        document.getElementById('roomStatusText').textContent = `✅ ルーム「${name}」を削除しました`;
+        document.getElementById('roomStatusText').style.color = '#7bc9a0';
       }
 
       // Enterキーで作成
-      document.getElementById('groupNameInput').addEventListener('keydown', function(e) {
+      document.getElementById('roomNameInput').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
-          document.getElementById('createGroupBtn').click();
+          document.getElementById('createRoomBtn').click();
         }
       });
 
       // 初期化
-      renderGroups();
-      updateGroupStatus();
+      renderRooms();
+      updateRoomStatus();
 
       // グローバルに公開
-      window.createGroup = createGroup;
-      window.deleteGroup = deleteGroup;
-      window.getGroups = getGroups;
-      window.saveGroups = saveGroups;
+      window.getRooms = getRooms;
+      window.saveRooms = saveRooms;
+      window.renderRooms = renderRooms;
+      window.updateRoomStatus = updateRoomStatus;
 
-      document.getElementById('createGroupBtn').addEventListener('click', createGroup);
+      document.getElementById('createRoomBtn').addEventListener('click', createRoom);
     })();
 
     // ============================================================
@@ -1381,7 +1381,7 @@
             name_locked: localStorage.getItem('eq_name_locked') || '',
             memo: localStorage.getItem('memo_data') || '',
             ranking: localStorage.getItem('rank_v5_all') || '',
-            groups: localStorage.getItem('user_groups') || '[]',
+            rooms: localStorage.getItem('user_rooms') || '[]',
             version: '1.0'
           };
           const json = JSON.stringify(data);
@@ -1431,8 +1431,8 @@
             localStorage.setItem('rank_v5_all', data.ranking);
             restored++;
           }
-          if (data.groups) {
-            localStorage.setItem('user_groups', data.groups);
+          if (data.rooms) {
+            localStorage.setItem('user_rooms', data.rooms);
             restored++;
           }
           if (data.username) {
@@ -1460,15 +1460,14 @@
               }
             } catch (e) {}
           }
-          if (data.groups) {
+          if (data.rooms) {
             try {
-              const groups = JSON.parse(data.groups);
-              // グループ表示を更新
-              if (typeof window.renderGroups === 'function') {
-                window.renderGroups();
+              const rooms = JSON.parse(data.rooms);
+              if (typeof window.renderRooms === 'function') {
+                window.renderRooms();
               }
-              if (typeof window.updateGroupStatus === 'function') {
-                window.updateGroupStatus(groups);
+              if (typeof window.updateRoomStatus === 'function') {
+                window.updateRoomStatus(rooms);
               }
             } catch (e) {}
           }
@@ -2402,10 +2401,10 @@
       function createBattleRoom() {
         if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
 
-        // グループ制限チェック
-        const groups = window.getGroups ? window.getGroups() : [];
-        if (groups.length === 0) {
-          battleToastMsg('⚠️ 先に設定タブでグループを作成してください（最大3つ）');
+        // ルーム制限チェック（作成済みルームがあれば最初のルーム名を使用）
+        const rooms = window.getRooms ? window.getRooms() : [];
+        if (rooms.length === 0) {
+          battleToastMsg('⚠️ 先に設定タブでルームを作成してください（最大3つ）');
           return;
         }
 
@@ -2424,8 +2423,8 @@
         const username = getUsername();
         battlePlayerId = username;
 
-        // グループを選択してもらう（簡易的に最初のグループを使用）
-        const groupName = groups[0] || 'デフォルト';
+        // 作成済みルームの最初のものを使用
+        const roomName = rooms[0] || 'デフォルト';
 
         battleRef.child(roomId).once('value')
           .then((snap) => {
@@ -2440,7 +2439,7 @@
               status: 'waiting',
               equation: null,
               creator: username,
-              group: groupName,
+              roomName: roomName,
               maxPlayers: MAX_PLAYERS,
               timestamp: Date.now()
             };
