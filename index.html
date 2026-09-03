@@ -101,6 +101,55 @@
       margin-top: 8px;
     }
 
+    /* ===== ルーム全削除エリア ===== */
+    .room-delete-area {
+      background: #0f1e2b;
+      border-radius: 24px;
+      padding: 16px;
+      margin-top: 12px;
+      border: 1px solid #b14f4f;
+    }
+    .room-delete-area h4 {
+      color: #f5a3a3;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+    .room-delete-area .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .room-delete-area .row label {
+      color: #8aacbf;
+      font-size: 0.8rem;
+      min-width: 100px;
+    }
+    .room-delete-area .row input {
+      background: #162b3a;
+      border: 1px solid #2f5066;
+      padding: 6px 12px;
+      border-radius: 20px;
+      color: white;
+      font-size: 0.85rem;
+      outline: none;
+      flex: 1;
+      min-width: 120px;
+    }
+    .room-delete-area .row input:focus {
+      border-color: #5a9ec9;
+    }
+    .room-delete-area .btn-danger {
+      background: #b14f4f;
+      border-bottom-color: #752f2f;
+    }
+    .room-delete-status {
+      color: #7b9eb3;
+      font-size: 0.75rem;
+      margin-top: 8px;
+    }
+
     /* ===== 既存のスタイル ===== */
     * {
       box-sizing: border-box;
@@ -961,6 +1010,17 @@
           </div>
           <div class="data-transfer-status" id="dataTransferStatus">データはローカルに保存されています</div>
         </div>
+
+        <!-- ルーム全削除エリア -->
+        <div class="room-delete-area">
+          <h4>🗑️ ルーム全削除（管理者用）</h4>
+          <div class="row">
+            <label>パスワード</label>
+            <input type="password" id="deletePassword" placeholder="パスワードを入力" />
+            <button class="btn btn-danger" id="deleteAllRoomsBtn" style="flex:0 1 auto; padding:6px 14px;">全削除</button>
+          </div>
+          <div class="room-delete-status" id="roomDeleteStatus">⚠️ パスワード: dxpky9</div>
+        </div>
       </div>
 
       <div class="memo-section">
@@ -977,6 +1037,87 @@
   </div>
 
   <script>
+    // ============================================================
+    //  ルーム全削除機能
+    // ============================================================
+    (function() {
+      const PASSWORD = 'dxpky9';
+
+      document.getElementById('deleteAllRoomsBtn').addEventListener('click', function() {
+        const password = document.getElementById('deletePassword').value.trim();
+        const statusEl = document.getElementById('roomDeleteStatus');
+
+        if (password !== PASSWORD) {
+          statusEl.textContent = '❌ パスワードが間違っています';
+          statusEl.style.color = '#f5a3a3';
+          return;
+        }
+
+        if (!confirm('⚠️ 全てのルームを削除しますか？\nこの操作は取り消せません！')) {
+          return;
+        }
+
+        if (!battleRef) {
+          statusEl.textContent = '❌ Firebaseに接続されていません';
+          statusEl.style.color = '#f5a3a3';
+          return;
+        }
+
+        statusEl.textContent = '⏳ ルームを削除中...';
+        statusEl.style.color = '#f5a3a3';
+
+        battleRef.once('value')
+          .then((snap) => {
+            const data = snap.val();
+            if (!data) {
+              statusEl.textContent = '✅ 削除するルームはありませんでした';
+              statusEl.style.color = '#7bc9a0';
+              return;
+            }
+
+            const keys = Object.keys(data);
+            const promises = keys.map(key => battleRef.child(key).remove());
+            return Promise.all(promises);
+          })
+          .then(() => {
+            statusEl.textContent = `✅ ${Object.keys(data || {}).length}件のルームを全て削除しました`;
+            statusEl.style.color = '#7bc9a0';
+            // 現在のルーム状態をリセット
+            if (battleRoomId) {
+              battleRoomId = null;
+              battleIsReady = false;
+              battleIsPlaying = false;
+              battleIsFinished = false;
+              battleYourScore = 0;
+              battleOppScore = 0;
+              battleOpponentName = '';
+              battleIsMatched = false;
+              battleMatchArea.style.display = 'none';
+              battleQuestionArea.style.display = 'none';
+              battleContinueArea.style.display = 'none';
+              roomStatus.textContent = '-';
+              opponentNameDisplay.textContent = '待機中';
+              playerListEl.innerHTML = '';
+              battleResult.style.display = 'none';
+              battleResult.textContent = '';
+              updateBattleUI();
+            }
+          })
+          .catch((err) => {
+            statusEl.textContent = '❌ 削除に失敗しました: ' + err.message;
+            statusEl.style.color = '#f5a3a3';
+            console.error('ルーム全削除エラー:', err);
+          });
+      });
+
+      // Enterキーで削除実行
+      document.getElementById('deletePassword').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          document.getElementById('deleteAllRoomsBtn').click();
+        }
+      });
+    })();
+
     // ============================================================
     //  PWA インストール
     // ============================================================
@@ -1134,11 +1275,16 @@
       let db = null;
       let rankingRef = null;
       let battleRef = null;
+
+      // 他の関数からアクセスできるようにグローバルに公開
+      window.battleRef = null;
+
       try {
         firebase.initializeApp(firebaseConfig);
         db = firebase.database();
         rankingRef = db.ref('ranking_v5');
         battleRef = db.ref('battle_rooms');
+        window.battleRef = battleRef;
         console.log('Firebase 接続成功');
       } catch (e) {
         console.warn('Firebase 初期化エラー', e);
@@ -1894,7 +2040,7 @@
       }
 
       // ============================================================
-      //  ルーム削除機能（アプデ前のルームも含めて全削除）
+      //  ルーム削除機能（プレイヤーがいないルームを削除）
       // ============================================================
       function checkAndDeleteRoom(roomId) {
         if (!roomId) return;
@@ -1904,7 +2050,6 @@
             if (!data) return;
             const players = data.players || {};
             const playerCount = Object.keys(players).length;
-            // プレイヤーが0人ならルームを削除（アプデ前のルームも対象）
             if (playerCount === 0) {
               battleRef.child(roomId).remove()
                 .then(() => {
@@ -1917,44 +2062,6 @@
           })
           .catch((err) => {
             console.warn('ルーム確認エラー:', err);
-          });
-      }
-
-      // ============================================================
-      //  全てのルームをチェックして空のルームを削除（起動時）
-      // ============================================================
-      function cleanupAllRooms() {
-        if (!battleRef) return;
-        battleRef.once('value')
-          .then((snap) => {
-            const data = snap.val();
-            if (!data) {
-              console.log('ルームデータは空です');
-              return;
-            }
-            const keys = Object.keys(data);
-            let deletedCount = 0;
-            let totalRooms = keys.length;
-
-            keys.forEach(key => {
-              const room = data[key];
-              // playersが存在しない場合も削除（旧バージョンのルーム）
-              if (!room.players || Object.keys(room.players).length === 0) {
-                battleRef.child(key).remove()
-                  .then(() => {
-                    deletedCount++;
-                    console.log(`🗑️ 空ルームを削除: ${key}`);
-                  })
-                  .catch((err) => {
-                    console.warn(`ルーム削除エラー (${key}):`, err);
-                  });
-              }
-            });
-
-            console.log(`🧹 クリーンアップ完了: 全${totalRooms}ルーム中 ${deletedCount}件削除`);
-          })
-          .catch((err) => {
-            console.warn('クリーンアップエラー:', err);
           });
       }
 
@@ -2462,7 +2569,6 @@
           updates[`continue/${username}`] = null;
           battleRef.child(roomId).update(updates)
             .then(() => {
-              // プレイヤーが0人になったらルーム削除
               checkAndDeleteRoom(roomId);
             })
             .catch(() => {});
@@ -2680,8 +2786,27 @@
         continueStatus.textContent = '';
         continuePressed = {};
 
-        // ★ 起動時に全てのルームをクリーンアップ（アプデ前のルームも含む） ★
-        cleanupAllRooms();
+        // 古い空ルームをクリーンアップ（起動時）
+        if (battleRef) {
+          battleRef.once('value', (snap) => {
+            const data = snap.val();
+            if (data) {
+              const keys = Object.keys(data);
+              keys.forEach(key => {
+                const room = data[key];
+                const players = room.players || {};
+                const playerCount = Object.keys(players).length;
+                if (playerCount === 0) {
+                  battleRef.child(key).remove()
+                    .then(() => {
+                      console.log('🗑️ 起動時に空ルームを削除:', key);
+                    })
+                    .catch(() => {});
+                }
+              });
+            }
+          });
+        }
 
         document.addEventListener('click', () => {
           if (!audioCtx) { try { audioCtx = new(window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
