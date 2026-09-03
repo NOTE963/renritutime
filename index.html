@@ -1894,7 +1894,7 @@
       }
 
       // ============================================================
-      //  ルーム削除機能（プレイヤーがいないルームを削除）
+      //  ルーム削除機能（アプデ前のルームも含めて全削除）
       // ============================================================
       function checkAndDeleteRoom(roomId) {
         if (!roomId) return;
@@ -1904,7 +1904,7 @@
             if (!data) return;
             const players = data.players || {};
             const playerCount = Object.keys(players).length;
-            // プレイヤーが0人ならルームを削除
+            // プレイヤーが0人ならルームを削除（アプデ前のルームも対象）
             if (playerCount === 0) {
               battleRef.child(roomId).remove()
                 .then(() => {
@@ -1917,6 +1917,44 @@
           })
           .catch((err) => {
             console.warn('ルーム確認エラー:', err);
+          });
+      }
+
+      // ============================================================
+      //  全てのルームをチェックして空のルームを削除（起動時）
+      // ============================================================
+      function cleanupAllRooms() {
+        if (!battleRef) return;
+        battleRef.once('value')
+          .then((snap) => {
+            const data = snap.val();
+            if (!data) {
+              console.log('ルームデータは空です');
+              return;
+            }
+            const keys = Object.keys(data);
+            let deletedCount = 0;
+            let totalRooms = keys.length;
+
+            keys.forEach(key => {
+              const room = data[key];
+              // playersが存在しない場合も削除（旧バージョンのルーム）
+              if (!room.players || Object.keys(room.players).length === 0) {
+                battleRef.child(key).remove()
+                  .then(() => {
+                    deletedCount++;
+                    console.log(`🗑️ 空ルームを削除: ${key}`);
+                  })
+                  .catch((err) => {
+                    console.warn(`ルーム削除エラー (${key}):`, err);
+                  });
+              }
+            });
+
+            console.log(`🧹 クリーンアップ完了: 全${totalRooms}ルーム中 ${deletedCount}件削除`);
+          })
+          .catch((err) => {
+            console.warn('クリーンアップエラー:', err);
           });
       }
 
@@ -2642,27 +2680,8 @@
         continueStatus.textContent = '';
         continuePressed = {};
 
-        // 古い空ルームをクリーンアップ（起動時）
-        if (battleRef) {
-          battleRef.once('value', (snap) => {
-            const data = snap.val();
-            if (data) {
-              const keys = Object.keys(data);
-              keys.forEach(key => {
-                const room = data[key];
-                const players = room.players || {};
-                const playerCount = Object.keys(players).length;
-                if (playerCount === 0) {
-                  battleRef.child(key).remove()
-                    .then(() => {
-                      console.log('🗑️ 起動時に空ルームを削除:', key);
-                    })
-                    .catch(() => {});
-                }
-              });
-            }
-          });
-        }
+        // ★ 起動時に全てのルームをクリーンアップ（アプデ前のルームも含む） ★
+        cleanupAllRooms();
 
         document.addEventListener('click', () => {
           if (!audioCtx) { try { audioCtx = new(window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
