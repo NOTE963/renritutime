@@ -551,6 +551,28 @@
       font-size: 0.7rem;
       margin-left: 8px;
     }
+    .player-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 4px 0 10px 0;
+    }
+    .player-tag {
+      background: #1a3343;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: #b3d4e8;
+      border: 1px solid #2f5066;
+    }
+    .player-tag.you {
+      border-color: #5a9ec9;
+      color: #7bc9a0;
+    }
+    .player-tag.ready {
+      border-color: #2a8266;
+      background: #1a4a3a;
+    }
     @media (max-width: 500px) {
       .app {
         padding: 14px 10px;
@@ -650,6 +672,10 @@
         <div class="battle-round">ラウンド <span id="battleRound">0</span>/3</div>
         <div class="battle-opponent" id="opponentNameDisplay">待機中</div>
       </div>
+
+      <!-- プレイヤーリスト -->
+      <div class="player-list" id="playerList"></div>
+
       <div class="battle-room-input">
         <span style="color:#8aacbf;">ルームID:</span>
         <input type="text" id="roomIdInput" placeholder="部屋番号" />
@@ -920,6 +946,7 @@
       const battleResult = document.getElementById('battleResult');
       const battleMatchArea = document.getElementById('battleMatchArea');
       const battleQuestionArea = document.getElementById('battleQuestionArea');
+      const playerListEl = document.getElementById('playerList');
 
       const memoTexts = [
         document.getElementById('memoText'),
@@ -1057,6 +1084,7 @@
       let battleIsMatched = false;
       let matchRetryCount = 0;
       let matchTimeout = null;
+      const MAX_PLAYERS = 4;
 
       // ============================================================
       //  設定
@@ -1090,23 +1118,19 @@
         let attempts = 0;
 
         do {
-          // 整数解を先に決める
           x = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
           y = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
 
-          // 係数をランダムに（0を避ける）
           a1 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
           b1 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
           a2 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
           b2 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
 
-          // 係数が0の場合は再生成
           if (a1 === 0) a1 = 1;
           if (b1 === 0) b1 = 1;
           if (a2 === 0) a2 = 1;
           if (b2 === 0) b2 = 1;
 
-          // 係数が同じにならないように調整
           if (a1 === a2 && b1 === b2) {
             a2 = (a2 + 1) % (maxVal + 1);
             if (a2 === 0) a2 = 1;
@@ -1114,7 +1138,6 @@
             if (b2 === 0) b2 = 1;
           }
 
-          // 解から右辺を計算
           c1 = a1 * x + b1 * y;
           c2 = a2 * x + b2 * y;
 
@@ -1290,7 +1313,7 @@
       }
 
       // ============================================================
-      //  対戦モード
+      //  対戦モード (最大4人)
       // ============================================================
       function battleToastMsg(msg) {
         battleToast.textContent = msg;
@@ -1360,6 +1383,7 @@
 
       function updateBattleUI() {
         yourScoreEl.textContent = battleYourScore;
+        // opponentScoreは自分以外の全員の合計スコアを表示（簡易的に）
         opponentScoreEl.textContent = battleOppScore;
         battleRoundEl.textContent = battleRound;
         if (battleOpponentName) opponentNameDisplay.textContent = battleOpponentName;
@@ -1386,6 +1410,30 @@
         }
       }
 
+      // プレイヤーリスト表示
+      function renderPlayerList(players) {
+        playerListEl.innerHTML = '';
+        if (!players) return;
+        const username = getUsername();
+        const names = Object.keys(players);
+        names.forEach(name => {
+          const tag = document.createElement('span');
+          tag.className = 'player-tag';
+          if (name === username) tag.classList.add('you');
+          if (players[name] && players[name].ready) tag.classList.add('ready');
+          tag.textContent = name + (players[name] && players[name].ready ? ' ✓' : '');
+          playerListEl.appendChild(tag);
+        });
+        // 空き枠表示
+        for (let i = names.length; i < MAX_PLAYERS; i++) {
+          const tag = document.createElement('span');
+          tag.className = 'player-tag';
+          tag.textContent = '空き';
+          tag.style.opacity = '0.4';
+          playerListEl.appendChild(tag);
+        }
+      }
+
       function stopRandomMatch() {
         if (battleWaitingForMatch) {
           battleWaitingForMatch = false;
@@ -1409,17 +1457,19 @@
         battleRef.child(`${battleRoomId}/players`).once('value')
           .then((snap) => {
             const players = snap.val() || {};
-            const opp = Object.keys(players).find(n => n !== username);
-            if (opp) {
+            const opps = Object.keys(players).filter(n => n !== username);
+            if (opps.length > 0) {
               const updates = {};
-              updates[`players/${opp}/score`] = (players[opp]?.score || 0) + 1;
+              opps.forEach(opp => {
+                updates[`players/${opp}/score`] = (players[opp]?.score || 0) + 1;
+              });
               updates['status'] = 'finished';
               return battleRef.child(battleRoomId).update(updates);
             }
           })
           .then(() => {
             battleToastMsg('ギブアップしました');
-            showBattleResult(`あなたはギブアップしました。${battleOpponentName} の勝利！`);
+            showBattleResult(`あなたはギブアップしました。`);
             battleIsFinished = true;
             battleReadyBtn.disabled = true;
             battleAnswerBtn.disabled = true;
@@ -1442,6 +1492,7 @@
           status: 'waiting',
           equation: null,
           creator: username,
+          maxPlayers: MAX_PLAYERS,
           timestamp: Date.now()
         };
         if (battleRef) {
@@ -1449,7 +1500,7 @@
             .then(() => {
               battleRoomId = roomId;
               roomStatus.textContent = `作成: ${roomId}`;
-              battleToastMsg('ルームを作成しました。相手の参加を待っています');
+              battleToastMsg('ルームを作成しました。参加者を待っています');
               battleIsMatched = false;
               battleStopMatchBtn.style.display = 'none';
               updateBattleAreas();
@@ -1478,6 +1529,11 @@
               if (data.players && data.players[username]) { battleToastMsg('この名前は既にルームにいます'); return; }
               if (data.status === 'playing' || data.status === 'finished') {
                 battleToastMsg('このルームは既に進行中です');
+                return;
+              }
+              const playerCount = Object.keys(data.players || {}).length;
+              if (playerCount >= MAX_PLAYERS) {
+                battleToastMsg('ルームが満員です (最大' + MAX_PLAYERS + '人)');
                 return;
               }
               const updates = {};
@@ -1540,7 +1596,8 @@
                 const room = data[key];
                 const players = room.players || {};
                 const usernames = Object.keys(players);
-                if (!players[username] && usernames.length < 2) {
+                // 自分が入っていない、かつ定員に達していないルームを探す
+                if (!players[username] && usernames.length < MAX_PLAYERS) {
                   matchedRoomKey = key;
                   break;
                 }
@@ -1576,7 +1633,7 @@
               if (matchRetryCount >= 10) {
                 battleWaitingForMatch = false;
                 battleStopMatchBtn.style.display = 'none';
-                battleToastMsg('マッチングできる相手が見つかりませんでした。後でもう一度試すか、ルームを作成してください');
+                battleToastMsg('マッチングできる部屋が見つかりませんでした。後でもう一度試すか、ルームを作成してください');
                 if (matchTimeout) {
                   clearTimeout(matchTimeout);
                   matchTimeout = null;
@@ -1631,11 +1688,16 @@
           const usernames = Object.keys(players);
           const username = getUsername();
 
-          const opp = usernames.find(n => n !== username);
-          if (opp) {
-            battleOpponentName = opp;
-            opponentNameDisplay.textContent = opp;
-            if (!battleIsMatched && usernames.length === 2) {
+          // プレイヤーリスト表示
+          renderPlayerList(players);
+
+          // 自分以外のプレイヤー名を表示（カンマ区切り）
+          const others = usernames.filter(n => n !== username);
+          if (others.length > 0) {
+            battleOpponentName = others.join(', ');
+            opponentNameDisplay.textContent = battleOpponentName;
+            // マッチング判定（2人以上）
+            if (!battleIsMatched && usernames.length >= 2) {
               battleIsMatched = true;
               updateBattleAreas();
               battleToastMsg('マッチング完了！ 準備OKを押してください');
@@ -1648,7 +1710,13 @@
           }
 
           if (players[username]) battleYourScore = players[username].score || 0;
-          if (opp && players[opp]) battleOppScore = players[opp].score || 0;
+
+          // 他のプレイヤーのスコア合計
+          let totalOppScore = 0;
+          others.forEach(n => {
+            totalOppScore += players[n]?.score || 0;
+          });
+          battleOppScore = totalOppScore;
 
           battleRound = data.round || 0;
           updateBattleUI();
@@ -1667,9 +1735,10 @@
           }
 
           if (data.status === 'waiting') {
+            // 全員が準備完了かつ2人以上いる場合
             const allReady = usernames.every(n => players[n] && players[n].ready === true);
-            const allExist = usernames.length === 2;
-            if (allExist && allReady && data.round < data.maxRound) {
+            const enoughPlayers = usernames.length >= 2;
+            if (enoughPlayers && allReady && data.round < data.maxRound) {
               const eq = generateBattleEquation();
               battleRef.child(roomId).update({
                 equation: eq,
@@ -1703,10 +1772,12 @@
             }
           }
 
-          if (opp && players[opp] && players[opp].solved === true && !players[username]?.solved) {
-            if (battleIsPlaying && !battleIsFinished && !battleOppSolved) {
+          // 誰かが先に解いたら通知
+          if (battleIsPlaying && !battleIsFinished) {
+            const solvedOthers = others.filter(n => players[n] && players[n].solved === true);
+            if (solvedOthers.length > 0 && !players[username]?.solved) {
               battleOppSolved = true;
-              battleToastMsg(`相手が先に解きました！`);
+              battleToastMsg(`${solvedOthers.join(', ')} が先に解きました！`);
               playWrongSound();
             }
           }
@@ -1727,7 +1798,7 @@
             battleIsReady = true;
             battleReadyBtn.textContent = '準備完了';
             battleReadyBtn.disabled = true;
-            battleToastMsg('準備完了！ 相手を待っています');
+            battleToastMsg('準備完了！ 他のプレイヤーを待っています');
           })
           .catch((err) => {
             battleToastMsg('準備エラー: ' + err.message);
@@ -1831,6 +1902,7 @@
         opponentNameDisplay.textContent = '待機中';
         battleResult.style.display = 'none';
         battleResult.textContent = '';
+        playerListEl.innerHTML = '';
         updateBattleUI();
         bEq1a.textContent = '?';
         bEq1b.textContent = '?';
