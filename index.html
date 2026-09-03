@@ -608,6 +608,13 @@
       font-size: 0.85rem;
       margin-top: 10px;
     }
+    .battle-continue-area {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 12px 0;
+    }
     @media (max-width: 500px) {
       .app {
         padding: 14px 10px;
@@ -757,6 +764,11 @@
         <div class="battle-actions">
           <button class="btn btn-success" id="battleAnswerBtn">解答</button>
         </div>
+      </div>
+
+      <!-- 続けて対戦ボタン -->
+      <div class="battle-continue-area" id="battleContinueArea" style="display:none;">
+        <button class="btn btn-primary" id="battleContinueBtn">続けて対戦</button>
       </div>
 
       <div class="battle-result" id="battleResult" style="display:none;"></div>
@@ -989,6 +1001,8 @@
       const battleCreateBtn = document.getElementById('battleCreateBtn');
       const battleRandomBtn = document.getElementById('battleRandomBtn');
       const battleStopMatchBtn = document.getElementById('battleStopMatchBtn');
+      const battleContinueBtn = document.getElementById('battleContinueBtn');
+      const battleContinueArea = document.getElementById('battleContinueArea');
       const roomIdInput = document.getElementById('roomIdInput');
       const roomStatus = document.getElementById('roomStatus');
       const battleToast = document.getElementById('battleToast');
@@ -1560,6 +1574,8 @@
             battleReadyBtn.disabled = true;
             battleAnswerBtn.disabled = true;
             battleRef.child(roomId).update({ status: 'finished' });
+            // 続けて対戦ボタンを表示
+            battleContinueArea.style.display = 'flex';
             return;
           }
 
@@ -1632,6 +1648,45 @@
         });
       }
 
+      // 続けて対戦
+      function continueBattle() {
+        if (!battleRoomId) return;
+        // 現在のルームをリセット
+        battleRef.child(battleRoomId).once('value', (snap) => {
+          const data = snap.val();
+          if (!data) return;
+          const players = data.players || {};
+          const usernames = Object.keys(players);
+          // スコアをリセット
+          const resetUpdates = {};
+          usernames.forEach(n => {
+            resetUpdates[`players/${n}/score`] = 0;
+            resetUpdates[`players/${n}/solved`] = false;
+            resetUpdates[`players/${n}/ready`] = false;
+          });
+          resetUpdates['status'] = 'waiting';
+          resetUpdates['equation'] = null;
+          resetUpdates['votes'] = {};
+          battleRef.child(battleRoomId).update(resetUpdates).then(() => {
+            battleIsFinished = false;
+            battleIsPlaying = false;
+            battleYourScore = 0;
+            battleOppScore = 0;
+            battleIsReady = false;
+            battleReadyBtn.disabled = false;
+            battleReadyBtn.textContent = '準備OK';
+            battleAnswerBtn.disabled = false;
+            battleResult.style.display = 'none';
+            battleResult.textContent = '';
+            battleContinueArea.style.display = 'none';
+            battleQuestionArea.style.display = 'none';
+            battleMatchArea.style.display = 'block';
+            battleToastMsg('対戦をリセットしました。準備OKを押してください');
+            updateBattleUI();
+          });
+        });
+      }
+
       function stopRandomMatch() {
         if (battleWaitingForMatch) {
           battleWaitingForMatch = false;
@@ -1669,6 +1724,7 @@
               battleToastMsg('ルームを作成しました。参加者を待っています');
               battleIsMatched = false;
               battleStopMatchBtn.style.display = 'none';
+              battleContinueArea.style.display = 'none';
               updateBattleAreas();
               listenBattleRoom(roomId);
             })
@@ -1712,6 +1768,7 @@
               battleToastMsg('ルームに参加しました');
               battleIsMatched = false;
               battleStopMatchBtn.style.display = 'none';
+              battleContinueArea.style.display = 'none';
               updateBattleAreas();
               listenBattleRoom(roomId);
             })
@@ -1790,6 +1847,7 @@
                     clearTimeout(matchTimeout);
                     matchTimeout = null;
                   }
+                  battleContinueArea.style.display = 'none';
                   updateBattleAreas();
                   listenBattleRoom(matchedRoomKey);
                 });
@@ -1914,14 +1972,16 @@
 
           if (data.status === 'finished') {
             battleIsFinished = true;
-            // 勝者は既に判定済み
+            // 続けて対戦ボタンを表示（まだ表示されていない場合）
+            if (battleContinueArea.style.display !== 'flex') {
+              battleContinueArea.style.display = 'flex';
+            }
           }
 
           // 誰かが正解したら次の問題へ（3問先取判定付き）
           if (battleIsPlaying && !battleIsFinished) {
             const anySolved = usernames.some(n => players[n] && players[n].solved === true);
             if (anySolved && usernames.length >= 2) {
-              // 少し待ってから次の問題へ（正解処理が完了するのを待つ）
               battleToastMsg('正解者がいました！ 次の問題へ...');
               setTimeout(() => {
                 onCorrectAnswer(roomId);
@@ -2051,6 +2111,7 @@
         battleResult.textContent = '';
         playerListEl.innerHTML = '';
         voteArea.style.display = 'none';
+        battleContinueArea.style.display = 'none';
         updateBattleUI();
         bEq1a.textContent = '?';
         bEq1b.textContent = '?';
@@ -2199,6 +2260,7 @@
       battleReadyBtn.addEventListener('click', setBattleReady);
       battleAnswerBtn.addEventListener('click', battleAnswer);
       battleExitBtn.addEventListener('click', exitBattleRoom);
+      battleContinueBtn.addEventListener('click', continueBattle);
 
       voteButtons.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn');
@@ -2231,6 +2293,7 @@
         resetTimer();
         updateBattleUI();
         updateBattleAreas();
+        battleContinueArea.style.display = 'none';
 
         document.addEventListener('click', () => {
           if (!audioCtx) { try { audioCtx = new(window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
