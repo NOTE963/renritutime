@@ -769,6 +769,7 @@
       <!-- 続けて対戦ボタン -->
       <div class="battle-continue-area" id="battleContinueArea" style="display:none;">
         <button class="btn btn-primary" id="battleContinueBtn">続けて対戦</button>
+        <span id="continueStatus" style="color:#8aacbf; font-size:0.85rem; margin-left:10px;"></span>
       </div>
 
       <div class="battle-result" id="battleResult" style="display:none;"></div>
@@ -1003,6 +1004,7 @@
       const battleStopMatchBtn = document.getElementById('battleStopMatchBtn');
       const battleContinueBtn = document.getElementById('battleContinueBtn');
       const battleContinueArea = document.getElementById('battleContinueArea');
+      const continueStatus = document.getElementById('continueStatus');
       const roomIdInput = document.getElementById('roomIdInput');
       const roomStatus = document.getElementById('roomStatus');
       const battleToast = document.getElementById('battleToast');
@@ -1158,6 +1160,10 @@
       // 投票関連
       let myVote = null;
       let voteResults = {};
+
+      // 続けて対戦関連
+      let continuePressed = {};
+      let isContinueMode = false;
 
       // ============================================================
       //  設定
@@ -1574,8 +1580,11 @@
             battleReadyBtn.disabled = true;
             battleAnswerBtn.disabled = true;
             battleRef.child(roomId).update({ status: 'finished' });
-            // 続けて対戦ボタンを表示
+            // 続けて対戦エリアを表示（全員に表示される）
             battleContinueArea.style.display = 'flex';
+            // 続けて押した状態をリセット
+            continuePressed = {};
+            updateContinueStatus(usernames);
             return;
           }
 
@@ -1648,10 +1657,25 @@
         });
       }
 
-      // 続けて対戦
-      function continueBattle() {
+      // 続けて対戦のステータス更新
+      function updateContinueStatus(usernames) {
+        const total = usernames.length;
+        const pressed = Object.keys(continuePressed).filter(n => continuePressed[n] === true).length;
+        if (total > 0) {
+          continueStatus.textContent = `続けて対戦準備: ${pressed}/${total}人`;
+          if (pressed === total) {
+            continueStatus.textContent = '全員準備完了！ 再戦を開始します...';
+            // 全員押したので再戦開始
+            setTimeout(() => {
+              executeContinueBattle();
+            }, 1000);
+          }
+        }
+      }
+
+      // 再戦実行
+      function executeContinueBattle() {
         if (!battleRoomId) return;
-        // 現在のルームをリセット
         battleRef.child(battleRoomId).once('value', (snap) => {
           const data = snap.val();
           if (!data) return;
@@ -1673,15 +1697,17 @@
             battleYourScore = 0;
             battleOppScore = 0;
             battleIsReady = false;
+            continuePressed = {};
+            continueStatus.textContent = '';
+            battleContinueArea.style.display = 'none';
             battleReadyBtn.disabled = false;
             battleReadyBtn.textContent = '準備OK';
             battleAnswerBtn.disabled = false;
             battleResult.style.display = 'none';
             battleResult.textContent = '';
-            battleContinueArea.style.display = 'none';
             battleQuestionArea.style.display = 'none';
             battleMatchArea.style.display = 'block';
-            battleToastMsg('対戦をリセットしました。準備OKを押してください');
+            battleToastMsg('再戦開始！ 準備OKを押してください');
             updateBattleUI();
           });
         });
@@ -1725,6 +1751,8 @@
               battleIsMatched = false;
               battleStopMatchBtn.style.display = 'none';
               battleContinueArea.style.display = 'none';
+              continuePressed = {};
+              continueStatus.textContent = '';
               updateBattleAreas();
               listenBattleRoom(roomId);
             })
@@ -1769,6 +1797,8 @@
               battleIsMatched = false;
               battleStopMatchBtn.style.display = 'none';
               battleContinueArea.style.display = 'none';
+              continuePressed = {};
+              continueStatus.textContent = '';
               updateBattleAreas();
               listenBattleRoom(roomId);
             })
@@ -1848,6 +1878,8 @@
                     matchTimeout = null;
                   }
                   battleContinueArea.style.display = 'none';
+                  continuePressed = {};
+                  continueStatus.textContent = '';
                   updateBattleAreas();
                   listenBattleRoom(matchedRoomKey);
                 });
@@ -1972,9 +2004,10 @@
 
           if (data.status === 'finished') {
             battleIsFinished = true;
-            // 続けて対戦ボタンを表示（まだ表示されていない場合）
+            // 続けて対戦エリアを表示（まだ表示されていない場合）
             if (battleContinueArea.style.display !== 'flex') {
               battleContinueArea.style.display = 'flex';
+              updateContinueStatus(usernames);
             }
           }
 
@@ -2073,6 +2106,25 @@
           });
       }
 
+      // 続けて対戦ボタン処理
+      function handleContinue() {
+        if (!battleRoomId) return;
+        const username = getUsername();
+        continuePressed[username] = true;
+        // Firebaseに保存して共有
+        battleRef.child(`${battleRoomId}/continue/${username}`).set(true);
+        battleToastMsg('再戦準備OK！ 他のプレイヤーを待っています');
+        // ローカルのステータス更新
+        battleRef.child(battleRoomId).once('value', (snap) => {
+          const data = snap.val();
+          if (data) {
+            const players = data.players || {};
+            const usernames = Object.keys(players);
+            updateContinueStatus(usernames);
+          }
+        });
+      }
+
       function exitBattleRoom() {
         if (battleListener) { battleListener.off();
           battleListener = null; }
@@ -2082,6 +2134,7 @@
           const updates = {};
           updates[`players/${username}`] = null;
           updates[`votes/${username}`] = null;
+          updates[`continue/${username}`] = null;
           battleRef.child(roomId).update(updates).then(() => {
             checkAndDeleteRoom(roomId);
           }).catch(() => {});
@@ -2099,6 +2152,7 @@
         battleIsMatched = false;
         myVote = null;
         voteResults = {};
+        continuePressed = {};
         battleStopMatchBtn.style.display = 'none';
         if (matchTimeout) {
           clearTimeout(matchTimeout);
@@ -2112,6 +2166,7 @@
         playerListEl.innerHTML = '';
         voteArea.style.display = 'none';
         battleContinueArea.style.display = 'none';
+        continueStatus.textContent = '';
         updateBattleUI();
         bEq1a.textContent = '?';
         bEq1b.textContent = '?';
@@ -2260,7 +2315,7 @@
       battleReadyBtn.addEventListener('click', setBattleReady);
       battleAnswerBtn.addEventListener('click', battleAnswer);
       battleExitBtn.addEventListener('click', exitBattleRoom);
-      battleContinueBtn.addEventListener('click', continueBattle);
+      battleContinueBtn.addEventListener('click', handleContinue);
 
       voteButtons.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn');
@@ -2294,6 +2349,8 @@
         updateBattleUI();
         updateBattleAreas();
         battleContinueArea.style.display = 'none';
+        continueStatus.textContent = '';
+        continuePressed = {};
 
         document.addEventListener('click', () => {
           if (!audioCtx) { try { audioCtx = new(window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
