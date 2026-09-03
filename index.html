@@ -494,8 +494,6 @@
       box-shadow: 0 1px 0 #0b1e2b;
       pointer-events: none;
     }
-
-    /* メモ機能 */
     .memo-section {
       margin-top: 16px;
       padding-top: 14px;
@@ -553,7 +551,6 @@
       font-size: 0.7rem;
       margin-left: 8px;
     }
-
     @media (max-width: 500px) {
       .app {
         padding: 14px 10px;
@@ -598,7 +595,6 @@
 </head>
 <body>
   <div class="app">
-    <!-- タブ -->
     <div class="tabs">
       <button class="tab-btn active" data-tab="tabChallenge">挑戦</button>
       <button class="tab-btn" data-tab="tabBattle">対戦</button>
@@ -606,7 +602,7 @@
       <button class="tab-btn" data-tab="tabSettings">設定</button>
     </div>
 
-    <!-- ===== 挑戦タブ ===== -->
+    <!-- 挑戦タブ -->
     <div id="tabChallenge" class="tab-content active">
       <div class="status-bar">
         <span class="timer" id="timerDisplay">0.0</span>
@@ -632,11 +628,9 @@
         <button class="btn" id="toggleSoundBtn" style="flex:0 1 auto; padding:4px 16px; min-width:60px; font-size:0.8rem;">オン</button>
       </div>
       <div class="toast" id="toastMessage">挑戦ボタンでスタート</div>
-
-      <!-- メモ -->
       <div class="memo-section">
         <div class="memo-header">
-          <span>📝 メモ</span>
+          <span>メモ</span>
           <span>
             <button class="btn" id="memoClearBtn">クリア</button>
             <span class="memo-char-count" id="memoCount">0/500</span>
@@ -646,9 +640,8 @@
       </div>
     </div>
 
-    <!-- ===== 対戦タブ ===== -->
+    <!-- 対戦タブ -->
     <div id="tabBattle" class="tab-content">
-      <!-- ステータス表示 -->
       <div class="battle-status">
         <div class="battle-score">
           <span class="score-you">あなた: <span id="yourScore">0</span></span>
@@ -657,8 +650,6 @@
         <div class="battle-round">ラウンド <span id="battleRound">0</span>/3</div>
         <div class="battle-opponent" id="opponentNameDisplay">待機中</div>
       </div>
-
-      <!-- ルーム操作エリア -->
       <div class="battle-room-input">
         <span style="color:#8aacbf;">ルームID:</span>
         <input type="text" id="roomIdInput" placeholder="部屋番号" />
@@ -668,8 +659,6 @@
         <button class="btn btn-stop-match" id="battleStopMatchBtn" style="display:none;">停止</button>
         <span class="battle-room-status" id="roomStatus">-</span>
       </div>
-
-      <!-- マッチング後の準備エリア -->
       <div id="battleMatchArea" style="display:none;">
         <div class="battle-waiting-area">
           <button class="btn btn-primary" id="battleReadyBtn">準備OK</button>
@@ -677,8 +666,6 @@
           <button class="btn btn-warning" id="battleExitBtn">退出</button>
         </div>
       </div>
-
-      <!-- 問題表示エリア -->
       <div id="battleQuestionArea" style="display:none;">
         <div class="eq-panel">
           <div class="eq-row"><span id="bEq1a">?</span>x + <span id="bEq1b">?</span>y = <span id="bEq1c">?</span></div>
@@ -692,15 +679,11 @@
           <button class="btn btn-success" id="battleAnswerBtn">解答</button>
         </div>
       </div>
-
-      <!-- 結果表示 -->
       <div class="battle-result" id="battleResult" style="display:none;"></div>
       <div class="toast" id="battleToast">対戦相手を待っています</div>
-
-      <!-- メモ -->
       <div class="memo-section">
         <div class="memo-header">
-          <span>📝 メモ</span>
+          <span>メモ</span>
           <span>
             <button class="btn" id="memoClearBtn2">クリア</button>
             <span class="memo-char-count" id="memoCount2">0/500</span>
@@ -710,7 +693,7 @@
       </div>
     </div>
 
-    <!-- ===== ランキングタブ ===== -->
+    <!-- ランキングタブ -->
     <div id="tabRanking" class="tab-content">
       <div class="rank-section">
         <div class="rank-header">
@@ -726,11 +709,9 @@
         <ul class="rank-list" id="rankingList"><li class="empty">読み込み中...</li></ul>
         <div class="footer">Firebase · 一人1記録 · 桁別</div>
       </div>
-
-      <!-- メモ -->
       <div class="memo-section">
         <div class="memo-header">
-          <span>📝 メモ</span>
+          <span>メモ</span>
           <span>
             <button class="btn" id="memoClearBtn3">クリア</button>
             <span class="memo-char-count" id="memoCount3">0/500</span>
@@ -740,7 +721,7 @@
       </div>
     </div>
 
-    <!-- ===== 設定タブ ===== -->
+    <!-- 設定タブ -->
     <div id="tabSettings" class="tab-content">
       <div class="settings">
         <div class="setting-row">
@@ -766,11 +747,9 @@
           <button class="btn btn-danger" id="deleteAccountBtn" style="min-width:140px;">アカウント削除</button>
         </div>
       </div>
-
-      <!-- メモ -->
       <div class="memo-section">
         <div class="memo-header">
-          <span>📝 メモ</span>
+          <span>メモ</span>
           <span>
             <button class="btn" id="memoClearBtn4">クリア</button>
             <span class="memo-char-count" id="memoCount4">0/500</span>
@@ -915,7 +894,6 @@
       const volumeLabel = document.getElementById('volumeLabel');
       const toggleSoundBtn = document.getElementById('toggleSoundBtn');
 
-      // 対戦DOM
       const bEq1a = document.getElementById('bEq1a');
       const bEq1b = document.getElementById('bEq1b');
       const bEq1c = document.getElementById('bEq1c');
@@ -943,7 +921,6 @@
       const battleMatchArea = document.getElementById('battleMatchArea');
       const battleQuestionArea = document.getElementById('battleQuestionArea');
 
-      // メモDOM
       const memoTexts = [
         document.getElementById('memoText'),
         document.getElementById('memoText2'),
@@ -981,7 +958,6 @@
         if (tabContents[tabId]) {
           tabContents[tabId].classList.add('active');
         }
-        // メモを保存（タブ切り替え時に自動保存）
         saveAllMemo();
       }
 
@@ -993,7 +969,7 @@
       });
 
       // ============================================================
-      //  メモ機能 (ローカルストレージ保存)
+      //  メモ機能
       // ============================================================
       function loadAllMemo() {
         try {
@@ -1028,7 +1004,6 @@
         saveAllMemo();
       }
 
-      // メモイベント設定
       for (let i = 0; i < memoTexts.length; i++) {
         memoTexts[i].addEventListener('input', function() {
           updateMemoCount(i);
@@ -1395,6 +1370,7 @@
           });
       }
 
+      // ルーム作成
       function createBattleRoom() {
         if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
         const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -1430,6 +1406,7 @@
         }
       }
 
+      // ルーム参加
       function joinBattleRoom() {
         if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
         const roomId = roomIdInput.value.trim().toUpperCase();
@@ -1468,6 +1445,7 @@
         }
       }
 
+      // ランダムマッチング - 修正: ルームが存在しない場合は作成しない
       function randomMatch() {
         if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
         if (battleWaitingForMatch) return;
@@ -1476,6 +1454,7 @@
         battleToastMsg('マッチング中...');
         const username = getUsername();
 
+        // 待機中のルームを検索
         battleRef.orderByChild('status').equalTo('waiting').limitToFirst(1).once('value')
           .then((snap) => {
             if (!battleWaitingForMatch) {
@@ -1490,6 +1469,7 @@
                 const room = data[key];
                 const players = room.players || {};
                 const usernames = Object.keys(players);
+                // 自分が入っていない、かつ2人未満のルームを探す
                 if (!players[username] && usernames.length < 2) {
                   const updates = {};
                   updates[`players/${username}`] = { ready: false, score: 0, solved: false };
@@ -1513,33 +1493,12 @@
                 }
               }
             }
+
+            // 待機中のルームが見つからなかった場合 - ルームを作成せずエラーメッセージ
             if (!found && battleWaitingForMatch) {
-              const newRoomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-              roomIdInput.value = newRoomId;
-              const roomData = {
-                players: { [username]: { ready: false, score: 0, solved: false } },
-                round: 0,
-                maxRound: 3,
-                status: 'waiting',
-                equation: null,
-                creator: username,
-                timestamp: Date.now()
-              };
-              return battleRef.child(newRoomId).set(roomData)
-                .then(() => {
-                  if (!battleWaitingForMatch) {
-                    battleStopMatchBtn.style.display = 'none';
-                    return;
-                  }
-                  battleRoomId = newRoomId;
-                  roomStatus.textContent = `作成: ${newRoomId}`;
-                  battleToastMsg('ルームを作成しました。相手を待っています');
-                  battleWaitingForMatch = false;
-                  battleStopMatchBtn.style.display = 'none';
-                  battleIsMatched = false;
-                  updateBattleAreas();
-                  listenBattleRoom(newRoomId);
-                });
+              battleWaitingForMatch = false;
+              battleStopMatchBtn.style.display = 'none';
+              battleToastMsg('現在マッチングできる相手がいません。後でもう一度試すか、ルームを作成してください');
             }
           })
           .catch((err) => {
