@@ -16,7 +16,6 @@
       padding: 0;
       font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
     }
-
     body {
       background: #0d1a26;
       min-height: 100vh;
@@ -25,9 +24,8 @@
       align-items: center;
       padding: 16px;
     }
-
     .app {
-      max-width: 720px;
+      max-width: 760px;
       width: 100%;
       background: #162b3b;
       border-radius: 28px;
@@ -35,16 +33,15 @@
       box-shadow: 0 16px 30px -8px rgba(0, 0, 0, 0.8);
       border: 1px solid #2f4a5e;
     }
-
     .tabs {
       display: flex;
-      gap: 6px;
+      gap: 4px;
       background: #0f1e2b;
       padding: 6px 8px;
       border-radius: 40px;
       margin-bottom: 20px;
+      flex-wrap: wrap;
     }
-
     .tab-btn {
       flex: 1;
       padding: 10px 6px;
@@ -52,29 +49,26 @@
       background: transparent;
       border-radius: 40px;
       font-weight: 600;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       color: #8aadc2;
       cursor: pointer;
       transition: 0.15s;
+      min-width: 60px;
     }
-
     .tab-btn.active {
       background: #2a4a60;
       color: #f0f9ff;
     }
-
     .tab-btn:hover:not(.active) {
       background: #1f384b;
       color: #c5dceb;
     }
-
     .tab-content {
       display: none;
     }
     .tab-content.active {
       display: block;
     }
-
     .status-bar {
       display: flex;
       justify-content: space-between;
@@ -84,8 +78,9 @@
       padding: 8px 16px;
       margin-bottom: 14px;
       color: #c8dce8;
+      flex-wrap: wrap;
+      gap: 6px;
     }
-
     .timer {
       font-size: 2.0rem;
       font-weight: 700;
@@ -96,15 +91,13 @@
       color: #b3e4ff;
       letter-spacing: 1px;
     }
-
     .status-msg {
       background: #1a3343;
       padding: 4px 16px;
       border-radius: 30px;
       font-weight: 500;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
     }
-
     .eq-panel {
       background: #0f1e2b;
       border-radius: 24px;
@@ -112,19 +105,17 @@
       margin: 6px 0 16px;
       border: 1px solid #2d4a5e;
     }
-
     .eq-row {
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 6px 14px;
       flex-wrap: wrap;
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       color: #e6f2fa;
       font-weight: 500;
       padding: 4px 0;
     }
-
     .eq-row span {
       background: #162b3a;
       padding: 0 14px;
@@ -133,7 +124,6 @@
       text-align: center;
       border: 1px solid #2f5066;
     }
-
     .input-area {
       display: flex;
       flex-wrap: wrap;
@@ -141,7 +131,6 @@
       gap: 14px 24px;
       margin: 14px 0 10px;
     }
-
     .input-group {
       display: flex;
       align-items: center;
@@ -151,13 +140,11 @@
       border-radius: 40px;
       border: 1px solid #2f4a5e;
     }
-
     .input-group label {
       color: #b2d3e8;
       font-weight: 600;
       font-size: 1.1rem;
     }
-
     .input-group input {
       background: #162b3a;
       border: none;
@@ -170,67 +157,61 @@
       text-align: center;
       outline: 1px solid transparent;
     }
-
     .input-group input:focus {
       outline: 1px solid #5a9ec9;
     }
-
     .actions {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 12px;
+      gap: 10px;
       margin: 10px 0 8px;
     }
-
     .btn {
       background: #1f465e;
       border: none;
       border-bottom: 4px solid #0f2a3b;
-      padding: 12px 28px;
+      padding: 12px 24px;
       border-radius: 40px;
       font-weight: 700;
-      font-size: 1.0rem;
+      font-size: 0.95rem;
       color: #f2fcff;
       cursor: pointer;
       transition: 0.06s ease;
       box-shadow: 0 5px 0 #0b1e2b;
       flex: 1 0 auto;
-      min-width: 100px;
+      min-width: 90px;
     }
-
     .btn:active {
       transform: translateY(4px);
       box-shadow: 0 1px 0 #0b1e2b;
     }
-
     .btn-primary {
       background: #3a7da8;
       border-bottom-color: #1d4d6a;
     }
-
     .btn-success {
       background: #2a8266;
       border-bottom-color: #18523f;
     }
-
     .btn-danger {
       background: #b14f4f;
       border-bottom-color: #752f2f;
     }
-
     .btn-warning {
       background: #c97d2b;
       border-bottom-color: #8a5518;
     }
-
+    .btn-secondary {
+      background: #4a6a7a;
+      border-bottom-color: #2a4a5a;
+    }
     .btn:disabled {
       opacity: 0.4;
       transform: translateY(4px);
       box-shadow: 0 1px 0 #0b1e2b;
       pointer-events: none;
     }
-
     .toast {
       background: #1a3343;
       padding: 8px 16px;
@@ -246,7 +227,6 @@
       justify-content: center;
       font-size: 0.9rem;
     }
-
     .rank-section {
       background: #0f1e2b;
       border-radius: 24px;
@@ -254,7 +234,6 @@
       border: 1px solid #2d4a5e;
       margin-top: 4px;
     }
-
     .rank-header {
       display: flex;
       justify-content: space-between;
@@ -267,7 +246,6 @@
       flex-wrap: wrap;
       gap: 8px;
     }
-
     .rank-tabs {
       display: flex;
       gap: 4px;
@@ -275,30 +253,27 @@
       padding: 4px;
       border-radius: 30px;
       border: 1px solid #234a5e;
+      flex-wrap: wrap;
     }
-
     .rank-tab-btn {
-      padding: 4px 14px;
+      padding: 4px 12px;
       border: none;
       background: transparent;
       border-radius: 24px;
       color: #8aadc2;
       cursor: pointer;
       font-weight: 600;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       transition: 0.15s;
     }
-
     .rank-tab-btn.active {
       background: #2a4a60;
       color: #f0f9ff;
     }
-
     .rank-tab-btn:hover:not(.active) {
       background: #1f384b;
       color: #c5dceb;
     }
-
     .rank-list {
       list-style: none;
       margin: 8px 0 0 0;
@@ -306,7 +281,6 @@
       overflow-y: auto;
       padding-right: 2px;
     }
-
     .rank-list li {
       display: flex;
       justify-content: space-between;
@@ -320,13 +294,11 @@
       font-size: 0.9rem;
       align-items: center;
     }
-
     .rank-list .rank {
       color: #aacde2;
       font-weight: 700;
       margin-right: 10px;
     }
-
     .rank-list .time {
       background: #1d4054;
       padding: 0 14px;
@@ -335,7 +307,6 @@
       color: #b3e4ff;
       font-size: 0.85rem;
     }
-
     .empty {
       text-align: center;
       color: #7b9eb3;
@@ -343,15 +314,6 @@
       font-style: italic;
       justify-content: center !important;
     }
-
-    .filter-tag {
-      background: #1a3343;
-      padding: 0 12px;
-      border-radius: 24px;
-      font-size: 0.75rem;
-      color: #b3d4e8;
-    }
-
     .settings {
       background: #0f1e2b;
       border-radius: 24px;
@@ -361,7 +323,6 @@
       flex-direction: column;
       gap: 18px;
     }
-
     .setting-row {
       display: flex;
       flex-wrap: wrap;
@@ -370,12 +331,10 @@
       color: #d6eaf5;
       font-weight: 500;
     }
-
     .setting-row label {
       min-width: 80px;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
     }
-
     .setting-row input,
     .setting-row select {
       background: #162b3a;
@@ -388,37 +347,24 @@
       flex: 1;
       min-width: 120px;
     }
-
     .setting-row input:focus,
     .setting-row select:focus {
       border-color: #5a9ec9;
     }
-
     .setting-row input:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
-
     .setting-row .btn {
       flex: 0 1 auto;
       padding: 8px 18px;
       font-size: 0.85rem;
     }
-
-    .setting-row .btn-danger {
-      flex: 0 1 auto;
-      padding: 8px 18px;
-      font-size: 0.85rem;
+    .name-locked {
+      color: #8aacbf;
+      font-size: 0.8rem;
+      margin-left: 8px;
     }
-
-    .footer {
-      text-align: right;
-      color: #5a7d93;
-      font-size: 0.65rem;
-      margin-top: 10px;
-      opacity: 0.5;
-    }
-
     .delete-section {
       margin-top: 10px;
       padding-top: 16px;
@@ -426,44 +372,124 @@
       display: flex;
       justify-content: flex-end;
     }
-
-    .name-locked {
-      color: #8aacbf;
-      font-size: 0.8rem;
-      margin-left: 8px;
+    .footer {
+      text-align: right;
+      color: #5a7d93;
+      font-size: 0.65rem;
+      margin-top: 10px;
+      opacity: 0.5;
     }
-
-    .rank-digit-label {
-      font-size: 0.8rem;
-      color: #8aacbf;
+    .battle-status {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0f1e2b;
+      border-radius: 40px;
+      padding: 10px 16px;
+      margin-bottom: 12px;
+      color: #c8dce8;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .battle-score {
+      display: flex;
+      gap: 20px;
+      font-weight: 600;
+    }
+    .battle-score .score-you {
+      color: #7bc9a0;
+    }
+    .battle-score .score-opponent {
+      color: #f5a3a3;
+    }
+    .battle-round {
       background: #1a3343;
-      padding: 2px 12px;
-      border-radius: 20px;
+      padding: 2px 16px;
+      border-radius: 30px;
+      font-weight: 600;
     }
-
-    /* 音量コントロール */
+    .battle-opponent {
+      background: #1a3343;
+      padding: 2px 16px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+    }
+    .battle-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 8px 0 10px;
+    }
     .sound-control {
       display: flex;
       align-items: center;
       gap: 10px;
       color: #8aacbf;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       margin-top: 4px;
+      flex-wrap: wrap;
     }
-
     .sound-control input[type="range"] {
       width: 80px;
       background: #162b3a;
       accent-color: #5a9ec9;
       cursor: pointer;
     }
-
+    .battle-room-input {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 6px 0;
+    }
+    .battle-room-input input {
+      background: #162b3a;
+      border: 1px solid #2f5066;
+      padding: 8px 14px;
+      border-radius: 24px;
+      color: white;
+      width: 140px;
+      outline: none;
+    }
+    .battle-room-input input:focus {
+      border-color: #5a9ec9;
+    }
+    .battle-room-input .btn {
+      flex: 0 1 auto;
+      padding: 8px 18px;
+      min-width: 60px;
+      font-size: 0.85rem;
+    }
+    .battle-result {
+      background: #1a3343;
+      border-radius: 30px;
+      padding: 10px 16px;
+      margin-top: 8px;
+      text-align: center;
+      color: #f0f9ff;
+      font-weight: 600;
+      font-size: 1.0rem;
+      border-left: 4px solid #f5a3a3;
+    }
+    .battle-room-status {
+      color: #7b9eb3;
+      font-size: 0.75rem;
+      min-width: 60px;
+    }
+    .battle-waiting-area {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 8px 0;
+    }
     @media (max-width: 500px) {
       .app {
         padding: 14px 10px;
       }
       .eq-row {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
         gap: 4px 8px;
       }
       .eq-row span {
@@ -475,9 +501,9 @@
         font-size: 1.0rem;
       }
       .btn {
-        font-size: 0.85rem;
-        padding: 10px 16px;
-        min-width: 80px;
+        font-size: 0.8rem;
+        padding: 10px 14px;
+        min-width: 70px;
       }
       .timer {
         font-size: 1.6rem;
@@ -485,6 +511,13 @@
       }
       .rank-tabs {
         flex-wrap: wrap;
+      }
+      .battle-score {
+        gap: 12px;
+        font-size: 0.9rem;
+      }
+      .battle-room-input input {
+        width: 100px;
       }
     }
   </style>
@@ -494,54 +527,90 @@
     <!-- タブ -->
     <div class="tabs">
       <button class="tab-btn active" data-tab="tabChallenge">挑戦</button>
+      <button class="tab-btn" data-tab="tabBattle">対戦</button>
       <button class="tab-btn" data-tab="tabRanking">ランキング</button>
       <button class="tab-btn" data-tab="tabSettings">設定</button>
     </div>
 
-    <!-- 挑戦タブ -->
+    <!-- ===== 挑戦タブ ===== -->
     <div id="tabChallenge" class="tab-content active">
       <div class="status-bar">
         <span class="timer" id="timerDisplay">0.0</span>
         <span class="status-msg" id="statusMessage">待機</span>
       </div>
-
       <div class="eq-panel">
-        <div class="eq-row">
-          <span id="eq1a">?</span>x + <span id="eq1b">?</span>y = <span id="eq1c">?</span>
-        </div>
-        <div class="eq-row">
-          <span id="eq2a">?</span>x + <span id="eq2b">?</span>y = <span id="eq2c">?</span>
-        </div>
+        <div class="eq-row"><span id="eq1a">?</span>x + <span id="eq1b">?</span>y = <span id="eq1c">?</span></div>
+        <div class="eq-row"><span id="eq2a">?</span>x + <span id="eq2b">?</span>y = <span id="eq2c">?</span></div>
       </div>
-
       <div class="input-area">
-        <div class="input-group">
-          <label>x =</label>
-          <input type="number" id="inputX" step="any" value="0" />
-        </div>
-        <div class="input-group">
-          <label>y =</label>
-          <input type="number" id="inputY" step="any" value="0" />
-        </div>
+        <div class="input-group"><label>x =</label><input type="number" id="inputX" step="any" value="0" /></div>
+        <div class="input-group"><label>y =</label><input type="number" id="inputY" step="any" value="0" /></div>
       </div>
-
       <div class="actions">
         <button class="btn btn-primary" id="newGameBtn">挑戦</button>
         <button class="btn btn-warning" id="stopBtn">ストップ</button>
         <button class="btn btn-success" id="checkBtn">解答</button>
       </div>
-
       <div class="sound-control">
         <span>音</span>
         <input type="range" id="volumeSlider" min="0" max="100" value="50" />
         <span id="volumeLabel">50%</span>
         <button class="btn" id="toggleSoundBtn" style="flex:0 1 auto; padding:4px 16px; min-width:60px; font-size:0.8rem;">オン</button>
       </div>
-
       <div class="toast" id="toastMessage">挑戦ボタンでスタート</div>
     </div>
 
-    <!-- ランキングタブ -->
+    <!-- ===== 対戦タブ ===== -->
+    <div id="tabBattle" class="tab-content">
+      <!-- ステータス表示 -->
+      <div class="battle-status">
+        <div class="battle-score">
+          <span class="score-you">あなた: <span id="yourScore">0</span></span>
+          <span class="score-opponent">相手: <span id="opponentScore">0</span></span>
+        </div>
+        <div class="battle-round">ラウンド <span id="battleRound">0</span>/3</div>
+        <div class="battle-opponent" id="opponentNameDisplay">待機中</div>
+      </div>
+
+      <!-- ルーム操作エリア (常時表示) -->
+      <div class="battle-room-input">
+        <span style="color:#8aacbf;">ルームID:</span>
+        <input type="text" id="roomIdInput" placeholder="部屋番号" />
+        <button class="btn btn-secondary" id="battleJoinBtn">参加</button>
+        <button class="btn btn-primary" id="battleCreateBtn">作成</button>
+        <button class="btn btn-success" id="battleRandomBtn">ランダム</button>
+        <span class="battle-room-status" id="roomStatus">-</span>
+      </div>
+
+      <!-- マッチング後の準備エリア (マッチング後に表示) -->
+      <div id="battleMatchArea" style="display:none;">
+        <div class="battle-waiting-area">
+          <button class="btn btn-primary" id="battleReadyBtn">準備OK</button>
+          <button class="btn btn-warning" id="battleExitBtn">退出</button>
+        </div>
+      </div>
+
+      <!-- 問題表示エリア (マッチング＆準備完了後に表示) -->
+      <div id="battleQuestionArea" style="display:none;">
+        <div class="eq-panel">
+          <div class="eq-row"><span id="bEq1a">?</span>x + <span id="bEq1b">?</span>y = <span id="bEq1c">?</span></div>
+          <div class="eq-row"><span id="bEq2a">?</span>x + <span id="bEq2b">?</span>y = <span id="bEq2c">?</span></div>
+        </div>
+        <div class="input-area">
+          <div class="input-group"><label>x =</label><input type="number" id="bInputX" step="any" value="0" /></div>
+          <div class="input-group"><label>y =</label><input type="number" id="bInputY" step="any" value="0" /></div>
+        </div>
+        <div class="battle-actions">
+          <button class="btn btn-success" id="battleAnswerBtn">解答</button>
+        </div>
+      </div>
+
+      <!-- 結果表示 -->
+      <div class="battle-result" id="battleResult" style="display:none;"></div>
+      <div class="toast" id="battleToast">対戦相手を待っています</div>
+    </div>
+
+    <!-- ===== ランキングタブ ===== -->
     <div id="tabRanking" class="tab-content">
       <div class="rank-section">
         <div class="rank-header">
@@ -554,14 +623,12 @@
             <button class="rank-tab-btn" data-digit="5">5桁</button>
           </div>
         </div>
-        <ul class="rank-list" id="rankingList">
-          <li class="empty">読み込み中...</li>
-        </ul>
-        <div class="footer">Firebase Realtime DB · 一人1記録 · 桁別ランキング</div>
+        <ul class="rank-list" id="rankingList"><li class="empty">読み込み中...</li></ul>
+        <div class="footer">Firebase · 一人1記録 · 桁別</div>
       </div>
     </div>
 
-    <!-- 設定タブ -->
+    <!-- ===== 設定タブ ===== -->
     <div id="tabSettings" class="tab-content">
       <div class="settings">
         <div class="setting-row">
@@ -573,11 +640,9 @@
         <div class="setting-row">
           <label>桁数</label>
           <select id="digitSelect">
-            <option value="1">1桁</option>
-            <option value="2">2桁</option>
+            <option value="1">1桁</option><option value="2">2桁</option>
             <option value="3" selected>3桁</option>
-            <option value="4">4桁</option>
-            <option value="5">5桁</option>
+            <option value="4">4桁</option><option value="5">5桁</option>
           </select>
           <span style="color:#8aacbf; font-size:0.85rem; margin-left:4px;">(1〜5桁)</span>
         </div>
@@ -610,35 +675,42 @@
 
       let db = null;
       let rankingRef = null;
+      let battleRef = null;
       try {
         firebase.initializeApp(firebaseConfig);
         db = firebase.database();
         rankingRef = db.ref('ranking_v5');
+        battleRef = db.ref('battle_rooms');
         console.log('Firebase 接続成功');
       } catch (e) {
-        console.warn('Firebase 初期化エラー → ローカル保存モード', e);
+        console.warn('Firebase 初期化エラー', e);
       }
 
       // ============================================================
-      //  サウンドエンジン (Web Audio API)
+      //  サウンド
       // ============================================================
       let audioCtx = null;
       let soundEnabled = true;
       let masterVolume = 0.5;
+      let bgmRunning = false;
+      let bgmPattern = [
+        { freq: 523.25, dur: 0.12 }, { freq: 587.33, dur: 0.10 },
+        { freq: 659.25, dur: 0.14 }, { freq: 523.25, dur: 0.10 },
+        { freq: 587.33, dur: 0.12 }, { freq: 659.25, dur: 0.16 }
+      ];
+      let bgmIndex = 0;
+      let bgmTimeout = null;
 
       function initAudio() {
         if (!audioCtx) {
-          audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+          try { audioCtx = new(window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
         }
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
       }
 
       function playTone(freq, duration, type = 'sine', volume = 0.3) {
-        if (!soundEnabled) return;
+        if (!soundEnabled || !audioCtx) return;
         try {
-          initAudio();
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
           osc.type = type;
@@ -649,85 +721,43 @@
           gain.connect(audioCtx.destination);
           osc.start();
           osc.stop(audioCtx.currentTime + duration);
-        } catch (e) {
-          // 音が出せなくてもゲームは続行
-        }
+        } catch (e) {}
       }
-
-      // BGM用ループ (トゥントゥントゥン)
-      let bgmInterval = null;
-      let bgmRunning = false;
-      let bgmPattern = [
-        { freq: 523.25, dur: 0.12, type: 'sine' }, // C5
-        { freq: 587.33, dur: 0.10, type: 'sine' }, // D5
-        { freq: 659.25, dur: 0.14, type: 'sine' }, // E5
-        { freq: 523.25, dur: 0.10, type: 'sine' }, // C5
-        { freq: 587.33, dur: 0.12, type: 'sine' }, // D5
-        { freq: 659.25, dur: 0.16, type: 'sine' }, // E5
-      ];
-      let bgmIndex = 0;
-      let bgmTimeout = null;
 
       function playBgmNote() {
         if (!soundEnabled || !bgmRunning) return;
         try {
           const note = bgmPattern[bgmIndex % bgmPattern.length];
-          playTone(note.freq, note.dur, note.type, 0.15);
+          playTone(note.freq, note.dur, 'sine', 0.12);
           bgmIndex++;
-          const nextDelay = note.dur * 1000 + 80;
-          bgmTimeout = setTimeout(playBgmNote, nextDelay);
-        } catch (e) {
-          // エラー時はリセット
-        }
+          bgmTimeout = setTimeout(playBgmNote, note.dur * 1000 + 80);
+        } catch (e) {}
       }
 
-      function startBgm() {
-        if (bgmRunning) return;
+      function startBgm() { if (bgmRunning) return;
         bgmRunning = true;
         bgmIndex = 0;
         if (bgmTimeout) clearTimeout(bgmTimeout);
-        playBgmNote();
-      }
+        playBgmNote(); }
 
-      function stopBgm() {
-        bgmRunning = false;
-        if (bgmTimeout) {
-          clearTimeout(bgmTimeout);
-          bgmTimeout = null;
-        }
-        bgmIndex = 0;
-      }
+      function stopBgm() { bgmRunning = false; if (bgmTimeout) { clearTimeout(bgmTimeout);
+          bgmTimeout = null; } }
 
-      function toggleBgm() {
-        if (bgmRunning) {
-          stopBgm();
-        } else {
-          startBgm();
-        }
-      }
-
-      // 効果音
       function playCorrectSound() {
-        // 正解: 上行音階
         setTimeout(() => playTone(523.25, 0.1, 'sine', 0.25), 0);
         setTimeout(() => playTone(659.25, 0.1, 'sine', 0.25), 120);
         setTimeout(() => playTone(783.99, 0.15, 'sine', 0.25), 240);
       }
 
-      function playWrongSound() {
-        // 不正解: 低い音
-        playTone(220, 0.25, 'sawtooth', 0.15);
-      }
+      function playWrongSound() { playTone(220, 0.25, 'sawtooth', 0.15); }
 
       function playStartSound() {
-        // スタート: 軽快な音
         playTone(440, 0.08, 'sine', 0.2);
         setTimeout(() => playTone(554.37, 0.08, 'sine', 0.2), 100);
         setTimeout(() => playTone(659.25, 0.12, 'sine', 0.25), 200);
       }
 
       function playStopSound() {
-        // ストップ: 下降音
         playTone(523.25, 0.1, 'sine', 0.2);
         setTimeout(() => playTone(440, 0.12, 'sine', 0.2), 120);
         setTimeout(() => playTone(349.23, 0.15, 'sine', 0.2), 240);
@@ -761,36 +791,75 @@
       const volumeLabel = document.getElementById('volumeLabel');
       const toggleSoundBtn = document.getElementById('toggleSoundBtn');
 
-      // タブ
-      const tabs = document.querySelectorAll('.tab-btn');
-      const contents = {
-        challenge: document.getElementById('tabChallenge'),
-        ranking: document.getElementById('tabRanking'),
-        settings: document.getElementById('tabSettings')
+      // 対戦DOM
+      const bEq1a = document.getElementById('bEq1a');
+      const bEq1b = document.getElementById('bEq1b');
+      const bEq1c = document.getElementById('bEq1c');
+      const bEq2a = document.getElementById('bEq2a');
+      const bEq2b = document.getElementById('bEq2b');
+      const bEq2c = document.getElementById('bEq2c');
+      const bInputX = document.getElementById('bInputX');
+      const bInputY = document.getElementById('bInputY');
+      const battleReadyBtn = document.getElementById('battleReadyBtn');
+      const battleAnswerBtn = document.getElementById('battleAnswerBtn');
+      const battleExitBtn = document.getElementById('battleExitBtn');
+      const battleJoinBtn = document.getElementById('battleJoinBtn');
+      const battleCreateBtn = document.getElementById('battleCreateBtn');
+      const battleRandomBtn = document.getElementById('battleRandomBtn');
+      const roomIdInput = document.getElementById('roomIdInput');
+      const roomStatus = document.getElementById('roomStatus');
+      const battleToast = document.getElementById('battleToast');
+      const yourScoreEl = document.getElementById('yourScore');
+      const opponentScoreEl = document.getElementById('opponentScore');
+      const battleRoundEl = document.getElementById('battleRound');
+      const opponentNameDisplay = document.getElementById('opponentNameDisplay');
+      const battleResult = document.getElementById('battleResult');
+      const battleMatchArea = document.getElementById('battleMatchArea');
+      const battleQuestionArea = document.getElementById('battleQuestionArea');
+
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      const tabContents = {
+        tabChallenge: document.getElementById('tabChallenge'),
+        tabBattle: document.getElementById('tabBattle'),
+        tabRanking: document.getElementById('tabRanking'),
+        tabSettings: document.getElementById('tabSettings')
       };
+
+      function switchTab(tabId) {
+        tabBtns.forEach(btn => btn.classList.remove('active'));
+        const targetBtn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+        if (targetBtn) targetBtn.classList.add('active');
+        Object.keys(tabContents).forEach(key => {
+          tabContents[key].classList.remove('active');
+        });
+        if (tabContents[tabId]) {
+          tabContents[tabId].classList.add('active');
+        }
+      }
+
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          const tabId = this.dataset.tab;
+          if (tabId) switchTab(tabId);
+        });
+      });
 
       // ============================================================
       //  Cookie
       // ============================================================
-      function setCookie(name, value, days = 365) {
-        const d = new Date();
-        d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
-        document.cookie = `${name}=${encodeURIComponent(value)}; expires=${d.toUTCString()}; path=/; SameSite=Lax`;
-      }
+      function setCookie(n, v, d = 365) { const e = new Date();
+        e.setTime(e.getTime() + d * 24 * 60 * 60 * 1000);
+        document.cookie = `${n}=${encodeURIComponent(v)}; expires=${e.toUTCString()}; path=/; SameSite=Lax`; }
 
-      function getCookie(name) {
-        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-        return match ? decodeURIComponent(match[2]) : null;
-      }
+      function getCookie(n) { const m = document.cookie.match(new RegExp('(^| )' + n + '=([^;]+)'));
+        return m ? decodeURIComponent(m[2]) : null; }
 
-      function deleteCookie(name) {
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-      }
+      function deleteCookie(n) { document.cookie = `${n}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`; }
 
       // ============================================================
       //  状態
       // ============================================================
-      let currentEq = { a1: 0, b1: 0, c1: 0, a2: 0, b2: 0, c2: 0, solutionX: 0, solutionY: 0 };
+      let currentEq = { a1: 0, b1: 0, c1: 0, a2: 0, b2: 0, c2: 0 };
       let timerInterval = null;
       let startTime = null;
       let elapsedSeconds = 0;
@@ -800,6 +869,22 @@
       let currentUsername = '';
       let isNameLocked = false;
       let selectedDigit = 3;
+
+      let battleRoomId = null;
+      let battleListener = null;
+      let battlePlayerId = null;
+      let battleYourScore = 0;
+      let battleOppScore = 0;
+      let battleRound = 0;
+      let battleMaxRound = 3;
+      let battleIsReady = false;
+      let battleIsPlaying = false;
+      let battleIsFinished = false;
+      let battleOpponentName = '';
+      let battleMySolved = false;
+      let battleOppSolved = false;
+      let battleWaitingForMatch = false;
+      let battleIsMatched = false;
 
       // ============================================================
       //  設定
@@ -828,9 +913,7 @@
         const digit = getDigit();
         const maxVal = Math.pow(10, digit) - 1;
         const minVal = digit === 1 ? -9 : -(maxVal);
-
-        let x, y, a1, b1, c1, a2, b2, c2;
-        let attempts = 0;
+        let x, y, a1, b1, c1, a2, b2, c2, attempts = 0;
         do {
           x = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
           y = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
@@ -844,17 +927,19 @@
         } while ((a1 === 0 && b1 === 0) || (a2 === 0 && b2 === 0) ||
           (a1 === a2 && b1 === b2 && c1 === c2) || attempts < 20 ||
           Math.abs(c1) > 1000000 || Math.abs(c2) > 1000000);
-
         return { a1, b1, c1, a2, b2, c2, solutionX: x, solutionY: y };
       }
 
-      function displayEquation(eq) {
-        eq1a.textContent = eq.a1;
-        eq1b.textContent = eq.b1;
-        eq1c.textContent = eq.c1;
-        eq2a.textContent = eq.a2;
-        eq2b.textContent = eq.b2;
-        eq2c.textContent = eq.c2;
+      function displayEquation(eq, isBattle = false) {
+        const t = isBattle ?
+          { a1: bEq1a, b1: bEq1b, c1: bEq1c, a2: bEq2a, b2: bEq2b, c2: bEq2c } :
+          { a1: eq1a, b1: eq1b, c1: eq1c, a2: eq2a, b2: eq2b, c2: eq2c };
+        t.a1.textContent = eq.a1;
+        t.b1.textContent = eq.b1;
+        t.c1.textContent = eq.c1;
+        t.a2.textContent = eq.a2;
+        t.b2.textContent = eq.b2;
+        t.c2.textContent = eq.c2;
       }
 
       // ============================================================
@@ -869,19 +954,15 @@
         }, 100);
       }
 
-      function stopTimer() {
-        if (timerInterval) { clearInterval(timerInterval);
-          timerInterval = null; }
-      }
+      function stopTimer() { if (timerInterval) { clearInterval(timerInterval);
+          timerInterval = null; } }
 
-      function resetTimer() {
-        stopTimer();
+      function resetTimer() { stopTimer();
         elapsedSeconds = 0;
-        timerDisplay.textContent = '0.0';
-      }
+        timerDisplay.textContent = '0.0'; }
 
       // ============================================================
-      //  ゲーム
+      //  挑戦モード
       // ============================================================
       function resetGame() {
         stopTimer();
@@ -905,15 +986,12 @@
       }
 
       function newGame() {
-        if (!isNameLocked) {
-          toastMessage('先に設定タブで名前を保存してください');
-          return;
-        }
+        if (!isNameLocked) { toastMessage('先に設定タブで名前を保存してください'); return; }
         stopTimer();
         resetTimer();
         const eq = generateEquation();
         currentEq = eq;
-        displayEquation(eq);
+        displayEquation(eq, false);
         inputX.value = 0;
         inputY.value = 0;
         isSolved = false;
@@ -928,21 +1006,14 @@
       }
 
       function checkAnswer() {
-        if (!isGameActive || isSolved) {
-          toastMessage('問題がありません');
-          return;
-        }
+        if (!isGameActive || isSolved) { toastMessage('問題がありません'); return; }
         const x = parseFloat(inputX.value);
         const y = parseFloat(inputY.value);
-        if (isNaN(x) || isNaN(y)) {
-          toastMessage('数値を入力');
-          return;
-        }
+        if (isNaN(x) || isNaN(y)) { toastMessage('数値を入力'); return; }
         const eps = 0.001;
         const eq = currentEq;
         const ok1 = Math.abs(eq.a1 * x + eq.b1 * y - eq.c1) < eps;
         const ok2 = Math.abs(eq.a2 * x + eq.b2 * y - eq.c2) < eps;
-
         if (ok1 && ok2) {
           isSolved = true;
           isGameActive = false;
@@ -954,22 +1025,11 @@
           checkBtn.disabled = true;
           toastMessage(`正解！ ${finalTime.toFixed(1)}秒`);
           playCorrectSound();
-
           const name = getUsername();
           const digit = getDigit();
-
           const existing = allRankingData.find(r => r.username === name);
-          if (existing) {
-            toastMessage(`「${name}」は既に使用されています`);
-            return;
-          }
-
-          const entry = {
-            username: name,
-            time: Math.round(finalTime * 10) / 10,
-            digit: digit,
-            timestamp: Date.now()
-          };
+          if (existing) { toastMessage(`「${name}」は既に使用されています`); return; }
+          const entry = { username: name, time: Math.round(finalTime * 10) / 10, digit: digit, timestamp: Date.now() };
           saveRanking(entry);
         } else {
           toastMessage('不正解');
@@ -983,35 +1043,23 @@
       //  ランキング
       // ============================================================
       function saveRanking(entry) {
-        if (rankingRef) {
-          rankingRef.push(entry).catch(() => saveLocal(entry));
-        } else {
-          saveLocal(entry);
-        }
+        if (rankingRef) { rankingRef.push(entry).catch(() => saveLocal(entry)); } else { saveLocal(entry); }
         allRankingData.push(entry);
         renderRanking();
       }
 
-      function saveLocal(entry) {
-        allRankingData.push(entry);
+      function saveLocal(entry) { allRankingData.push(entry);
         localStorage.setItem('rank_v5_all', JSON.stringify(allRankingData));
-        renderRanking();
-      }
+        renderRanking(); }
 
       function loadRanking() {
         if (rankingRef) {
           rankingRef.on('value', (snap) => {
             const data = snap.val();
-            if (data) {
-              allRankingData = Object.values(data);
-            } else {
-              allRankingData = [];
-            }
+            allRankingData = data ? Object.values(data) : [];
             renderRanking();
           }, () => loadLocal());
-        } else {
-          loadLocal();
-        }
+        } else { loadLocal(); }
       }
 
       function loadLocal() {
@@ -1026,7 +1074,6 @@
         const filtered = allRankingData.filter(item => item.digit === selectedDigit);
         filtered.sort((a, b) => a.time - b.time);
         const top3 = filtered.slice(0, 3);
-
         rankingList.innerHTML = '';
         if (!top3 || top3.length === 0) {
           rankingList.innerHTML = `<li class="empty">${selectedDigit}桁の記録はまだありません</li>`;
@@ -1035,12 +1082,455 @@
         top3.forEach((item, i) => {
           const li = document.createElement('li');
           const medal = i === 0 ? '1' : i === 1 ? '2' : '3';
-          li.innerHTML = `
-            <span><span class="rank">${medal}</span> ${item.username}</span>
-            <span class="time">${item.time}s</span>
-          `;
+          li.innerHTML =
+            `<span><span class="rank">${medal}</span> ${item.username}</span><span class="time">${item.time}s</span>`;
           rankingList.appendChild(li);
         });
+      }
+
+      // ============================================================
+      //  対戦モード
+      // ============================================================
+      function battleToastMsg(msg) {
+        battleToast.textContent = msg;
+        setTimeout(() => {
+          if (battleToast.textContent === msg) battleToast.textContent = '対戦相手を待っています';
+        }, 3000);
+      }
+
+      function generateBattleEquation() {
+        const digit = getDigit();
+        const maxVal = Math.pow(10, digit) - 1;
+        const minVal = digit === 1 ? -9 : -(maxVal);
+        let x, y, a1, b1, c1, a2, b2, c2, attempts = 0;
+        do {
+          x = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+          y = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+          a1 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+          b1 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+          a2 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+          b2 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+          c1 = a1 * x + b1 * y;
+          c2 = a2 * x + b2 * y;
+          attempts++;
+        } while ((a1 === 0 && b1 === 0) || (a2 === 0 && b2 === 0) ||
+          (a1 === a2 && b1 === b2 && c1 === c2) || attempts < 20 ||
+          Math.abs(c1) > 1000000 || Math.abs(c2) > 1000000);
+        return { a1, b1, c1, a2, b2, c2, solutionX: x, solutionY: y };
+      }
+
+      function setBattleEquation(eq) {
+        bEq1a.textContent = eq.a1;
+        bEq1b.textContent = eq.b1;
+        bEq1c.textContent = eq.c1;
+        bEq2a.textContent = eq.a2;
+        bEq2b.textContent = eq.b2;
+        bEq2c.textContent = eq.c2;
+        bInputX.value = 0;
+        bInputY.value = 0;
+        battleMySolved = false;
+        battleOppSolved = false;
+        battleResult.style.display = 'none';
+        battleResult.textContent = '';
+      }
+
+      function updateBattleUI() {
+        yourScoreEl.textContent = battleYourScore;
+        opponentScoreEl.textContent = battleOppScore;
+        battleRoundEl.textContent = battleRound;
+        if (battleOpponentName) opponentNameDisplay.textContent = battleOpponentName;
+        battleReadyBtn.textContent = battleIsReady ? '準備完了' : '準備OK';
+        battleReadyBtn.disabled = battleIsReady || battleIsPlaying || battleIsFinished;
+      }
+
+      function showBattleResult(msg) {
+        battleResult.style.display = 'block';
+        battleResult.textContent = msg;
+      }
+
+      // 対戦エリアの表示切替
+      function updateBattleAreas() {
+        if (battleIsMatched && battleRoomId) {
+          battleMatchArea.style.display = 'block';
+          // 準備が完了してラウンドが始まったら問題表示
+          if (battleIsPlaying || battleIsFinished) {
+            battleQuestionArea.style.display = 'block';
+          } else {
+            battleQuestionArea.style.display = 'none';
+          }
+        } else {
+          battleMatchArea.style.display = 'none';
+          battleQuestionArea.style.display = 'none';
+        }
+      }
+
+      // ルーム作成 (エラーハンドリング強化)
+      function createBattleRoom() {
+        if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
+        const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+        roomIdInput.value = roomId;
+        const username = getUsername();
+        battlePlayerId = username;
+        const roomData = {
+          players: { [username]: { ready: false, score: 0, solved: false } },
+          round: 0,
+          maxRound: 3,
+          status: 'waiting',
+          equation: null,
+          creator: username,
+          timestamp: Date.now()
+        };
+        if (battleRef) {
+          battleRef.child(roomId).set(roomData)
+            .then(() => {
+              battleRoomId = roomId;
+              roomStatus.textContent = `作成: ${roomId}`;
+              battleToastMsg('ルームを作成しました。相手の参加を待っています');
+              battleIsMatched = false;
+              updateBattleAreas();
+              listenBattleRoom(roomId);
+            })
+            .catch((err) => {
+              console.error('作成エラー:', err);
+              battleToastMsg('ルーム作成に失敗しました (エラー: ' + err.message + ')');
+            });
+        } else {
+          battleToastMsg('Firebaseに接続されていません');
+        }
+      }
+
+      // ルーム参加
+      function joinBattleRoom() {
+        if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
+        const roomId = roomIdInput.value.trim().toUpperCase();
+        if (!roomId) { battleToastMsg('ルームIDを入力してください'); return; }
+        const username = getUsername();
+        battlePlayerId = username;
+        if (battleRef) {
+          battleRef.child(roomId).once('value')
+            .then((snap) => {
+              const data = snap.val();
+              if (!data) { battleToastMsg('ルームが見つかりません'); return; }
+              if (data.players && data.players[username]) { battleToastMsg('この名前は既にルームにいます'); return; }
+              if (data.status === 'playing' || data.status === 'finished') {
+                battleToastMsg('このルームは既に進行中です');
+                return;
+              }
+              const updates = {};
+              updates[`players/${username}`] = { ready: false, score: 0, solved: false };
+              return battleRef.child(roomId).update(updates);
+            })
+            .then(() => {
+              battleRoomId = roomId;
+              roomStatus.textContent = `参加: ${roomId}`;
+              battleToastMsg('ルームに参加しました');
+              battleIsMatched = false;
+              updateBattleAreas();
+              listenBattleRoom(roomId);
+            })
+            .catch((err) => {
+              console.error('参加エラー:', err);
+              battleToastMsg('参加に失敗しました (エラー: ' + err.message + ')');
+            });
+        } else {
+          battleToastMsg('Firebaseに接続されていません');
+        }
+      }
+
+      // ランダムマッチング (エラーハンドリング強化)
+      function randomMatch() {
+        if (!isNameLocked) { battleToastMsg('先に名前を設定してください'); return; }
+        if (battleWaitingForMatch) return;
+        battleWaitingForMatch = true;
+        battleToastMsg('マッチング中...');
+        const username = getUsername();
+
+        battleRef.orderByChild('status').equalTo('waiting').limitToFirst(1).once('value')
+          .then((snap) => {
+            const data = snap.val();
+            let found = false;
+            if (data) {
+              const keys = Object.keys(data);
+              for (let key of keys) {
+                const room = data[key];
+                const players = room.players || {};
+                const usernames = Object.keys(players);
+                if (!players[username] && usernames.length < 2) {
+                  const updates = {};
+                  updates[`players/${username}`] = { ready: false, score: 0, solved: false };
+                  return battleRef.child(key).update(updates)
+                    .then(() => {
+                      battleRoomId = key;
+                      roomIdInput.value = key;
+                      roomStatus.textContent = `参加: ${key}`;
+                      battleToastMsg('マッチング成功！');
+                      battleWaitingForMatch = false;
+                      battleIsMatched = false;
+                      updateBattleAreas();
+                      listenBattleRoom(key);
+                      found = true;
+                    });
+                }
+              }
+            }
+            // 見つからなかったら新規作成
+            if (!found) {
+              const newRoomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+              roomIdInput.value = newRoomId;
+              const roomData = {
+                players: { [username]: { ready: false, score: 0, solved: false } },
+                round: 0,
+                maxRound: 3,
+                status: 'waiting',
+                equation: null,
+                creator: username,
+                timestamp: Date.now()
+              };
+              return battleRef.child(newRoomId).set(roomData)
+                .then(() => {
+                  battleRoomId = newRoomId;
+                  roomStatus.textContent = `作成: ${newRoomId}`;
+                  battleToastMsg('ルームを作成しました。相手を待っています');
+                  battleWaitingForMatch = false;
+                  battleIsMatched = false;
+                  updateBattleAreas();
+                  listenBattleRoom(newRoomId);
+                });
+            }
+          })
+          .catch((err) => {
+            console.error('マッチングエラー:', err);
+            battleToastMsg('マッチングエラー: ' + err.message);
+            battleWaitingForMatch = false;
+          });
+      }
+
+      function listenBattleRoom(roomId) {
+        if (battleListener) battleListener.off();
+        battleListener = battleRef.child(roomId);
+        battleListener.on('value', (snap) => {
+          const data = snap.val();
+          if (!data) {
+            battleToastMsg('ルームが削除されました');
+            exitBattleRoom();
+            return;
+          }
+          const players = data.players || {};
+          const usernames = Object.keys(players);
+          const username = getUsername();
+
+          const opp = usernames.find(n => n !== username);
+          if (opp) {
+            battleOpponentName = opp;
+            opponentNameDisplay.textContent = opp;
+            // マッチング成立
+            if (!battleIsMatched && usernames.length === 2) {
+              battleIsMatched = true;
+              updateBattleAreas();
+              battleToastMsg('マッチング完了！ 準備OKを押してください');
+            }
+          } else {
+            battleOpponentName = '';
+            opponentNameDisplay.textContent = '待機中';
+            battleIsMatched = false;
+            updateBattleAreas();
+          }
+
+          if (players[username]) battleYourScore = players[username].score || 0;
+          if (opp && players[opp]) battleOppScore = players[opp].score || 0;
+
+          battleRound = data.round || 0;
+          updateBattleUI();
+
+          if (data.equation) {
+            setBattleEquation(data.equation);
+            battleIsPlaying = true;
+            battleReadyBtn.disabled = true;
+            battleQuestionArea.style.display = 'block';
+          } else {
+            battleIsPlaying = false;
+            battleReadyBtn.disabled = false;
+            if (battleIsMatched) {
+              battleQuestionArea.style.display = 'none';
+            }
+          }
+
+          // 準備状態の確認
+          if (data.status === 'waiting') {
+            const allReady = usernames.every(n => players[n] && players[n].ready === true);
+            const allExist = usernames.length === 2;
+            if (allExist && allReady && data.round < data.maxRound) {
+              const eq = generateBattleEquation();
+              battleRef.child(roomId).update({
+                equation: eq,
+                status: 'playing',
+                round: data.round + 1
+              }).then(() => {
+                const resetUpdates = {};
+                usernames.forEach(n => { resetUpdates[`players/${n}/solved`] = false; });
+                battleRef.child(roomId).update(resetUpdates);
+                battleToastMsg(`ラウンド ${data.round + 1} スタート！`);
+                playStartSound();
+              });
+            }
+          }
+
+          // 勝敗判定
+          if (data.status === 'finished' || data.round >= data.maxRound) {
+            battleIsFinished = true;
+            let winner = '';
+            let maxScore = -1;
+            usernames.forEach(n => {
+              const s = players[n]?.score || 0;
+              if (s > maxScore) { maxScore = s;
+                winner = n; }
+            });
+            if (winner) {
+              const isYou = winner === username;
+              showBattleResult(`${isYou ? 'あなた' : winner} の勝利！ (${maxScore}点)`);
+              battleToastMsg(`対戦終了！ ${winner} の勝利！`);
+              battleReadyBtn.disabled = true;
+              battleAnswerBtn.disabled = true;
+            }
+          }
+
+          // 相手が先に解いたら通知
+          if (opp && players[opp] && players[opp].solved === true && !players[username]?.solved) {
+            if (battleIsPlaying && !battleIsFinished && !battleOppSolved) {
+              battleOppSolved = true;
+              battleToastMsg(`相手が先に解きました！`);
+              playWrongSound();
+            }
+          }
+          if (players[username] && players[username].solved === true) {
+            battleMySolved = true;
+          }
+
+          // 更新
+          updateBattleAreas();
+        });
+      }
+
+      function setBattleReady() {
+        if (!battleRoomId) { battleToastMsg('ルームに参加してください'); return; }
+        if (battleIsReady || battleIsPlaying || battleIsFinished) return;
+        const username = getUsername();
+        battleRef.child(`${battleRoomId}/players/${username}/ready`).set(true)
+          .then(() => {
+            battleIsReady = true;
+            battleReadyBtn.textContent = '準備完了';
+            battleReadyBtn.disabled = true;
+            battleToastMsg('準備完了！ 相手を待っています');
+          })
+          .catch((err) => {
+            battleToastMsg('準備エラー: ' + err.message);
+          });
+      }
+
+      function battleAnswer() {
+        if (!battleRoomId || !battleIsPlaying || battleIsFinished) {
+          battleToastMsg('対戦が開始されていません');
+          return;
+        }
+        const username = getUsername();
+        battleRef.child(`${battleRoomId}/players/${username}/solved`).once('value')
+          .then((snap) => {
+            if (snap.val() === true) { battleToastMsg('既に解答済みです'); return; }
+            const x = parseFloat(bInputX.value);
+            const y = parseFloat(bInputY.value);
+            if (isNaN(x) || isNaN(y)) { battleToastMsg('数値を入力'); return; }
+            return battleRef.child(`${battleRoomId}/equation`).once('value')
+              .then((eqSnap) => {
+                const eq = eqSnap.val();
+                if (!eq) { battleToastMsg('問題がありません'); return; }
+                const eps = 0.001;
+                const ok1 = Math.abs(eq.a1 * x + eq.b1 * y - eq.c1) < eps;
+                const ok2 = Math.abs(eq.a2 * x + eq.b2 * y - eq.c2) < eps;
+                if (ok1 && ok2) {
+                  const updates = {};
+                  updates[`players/${username}/solved`] = true;
+                  updates[`players/${username}/score`] = (battleYourScore || 0) + 1;
+                  return battleRef.child(`${battleRoomId}/players`).once('value')
+                    .then((pSnap) => {
+                      const players = pSnap.val() || {};
+                      const allSolved = Object.keys(players).every(n => players[n]?.solved === true);
+                      return battleRef.child(battleRoomId).update(updates)
+                        .then(() => {
+                          battleToastMsg('正解！ +1点');
+                          playCorrectSound();
+                          if (allSolved) {
+                            battleRef.child(battleRoomId).update({
+                              status: 'waiting',
+                              equation: null,
+                              round: battleRound
+                            }).then(() => {
+                              const resetUpdates = {};
+                              Object.keys(players).forEach(n => { resetUpdates[`players/${n}/ready`] = false; });
+                              battleRef.child(battleRoomId).update(resetUpdates);
+                              battleIsReady = false;
+                              battleReadyBtn.disabled = false;
+                              battleReadyBtn.textContent = '準備OK';
+                              battleToastMsg('次のラウンドへ');
+                            });
+                          }
+                        });
+                    });
+                } else {
+                  battleToastMsg('不正解');
+                  playWrongSound();
+                }
+              });
+          })
+          .catch((err) => {
+            battleToastMsg('解答エラー: ' + err.message);
+          });
+      }
+
+      function exitBattleRoom() {
+        if (battleListener) { battleListener.off();
+          battleListener = null; }
+        if (battleRoomId && battleRef) {
+          battleRef.child(battleRoomId).once('value')
+            .then((snap) => {
+              const data = snap.val();
+              if (data) {
+                const username = getUsername();
+                const updates = {};
+                updates[`players/${username}`] = null;
+                battleRef.child(battleRoomId).update(updates);
+              }
+            })
+            .catch(() => {});
+        }
+        battleRoomId = null;
+        battleIsReady = false;
+        battleIsPlaying = false;
+        battleIsFinished = false;
+        battleYourScore = 0;
+        battleOppScore = 0;
+        battleRound = 0;
+        battleOpponentName = '';
+        battleMySolved = false;
+        battleOppSolved = false;
+        battleWaitingForMatch = false;
+        battleIsMatched = false;
+        roomStatus.textContent = '-';
+        opponentNameDisplay.textContent = '待機中';
+        battleResult.style.display = 'none';
+        battleResult.textContent = '';
+        updateBattleUI();
+        bEq1a.textContent = '?';
+        bEq1b.textContent = '?';
+        bEq1c.textContent = '?';
+        bEq2a.textContent = '?';
+        bEq2b.textContent = '?';
+        bEq2c.textContent = '?';
+        battleReadyBtn.disabled = false;
+        battleReadyBtn.textContent = '準備OK';
+        battleAnswerBtn.disabled = false;
+        battleToastMsg('退出しました');
+        updateBattleAreas();
+        stopBgm();
       }
 
       // ============================================================
@@ -1048,41 +1538,25 @@
       // ============================================================
       function deleteAccount() {
         const name = getUsername();
-        if (!name || name === '名無し') {
-          toastMessage('先にユーザー名を設定してください');
-          return;
-        }
-
+        if (!name || name === '名無し') { toastMessage('先にユーザー名を設定してください'); return; }
         const myEntry = allRankingData.find(r => r.username === name);
-        if (!myEntry) {
-          toastMessage(`「${name}」の記録は見つかりません`);
-          return;
-        }
-
-        if (!confirm(`「${name}」のアカウントと全ての記録を削除しますか？`)) {
-          return;
-        }
-
+        if (!myEntry) { toastMessage(`「${name}」の記録は見つかりません`); return; }
+        if (!confirm(`「${name}」のアカウントと全ての記録を削除しますか？`)) return;
         if (rankingRef) {
-          rankingRef.once('value', (snap) => {
-            const data = snap.val();
-            if (!data) {
-              toastMessage('削除するデータがありません');
-              return;
-            }
-            const updates = {};
-            let found = false;
-            Object.keys(data).forEach(key => {
-              if (data[key].username === name) {
-                updates[key] = null;
-                found = true;
-              }
-            });
-            if (!found) {
-              toastMessage(`「${name}」の記録は見つかりません`);
-              return;
-            }
-            rankingRef.update(updates).then(() => {
+          rankingRef.once('value')
+            .then((snap) => {
+              const data = snap.val();
+              if (!data) { toastMessage('削除するデータがありません'); return; }
+              const updates = {};
+              let found = false;
+              Object.keys(data).forEach(key => {
+                if (data[key].username === name) { updates[key] = null;
+                  found = true; }
+              });
+              if (!found) { toastMessage(`「${name}」の記録は見つかりません`); return; }
+              return rankingRef.update(updates);
+            })
+            .then(() => {
               allRankingData = allRankingData.filter(r => r.username !== name);
               localStorage.setItem('rank_v5_all', JSON.stringify(allRankingData));
               deleteCookie('eq_username');
@@ -1095,14 +1569,8 @@
               renderRanking();
               resetGame();
               stopBgm();
-            }).catch((err) => {
-              console.error('削除エラー:', err);
-              toastMessage('削除に失敗しました');
-            });
-          }).catch((err) => {
-            console.error('データ取得エラー:', err);
-            toastMessage('データ取得に失敗しました');
-          });
+            })
+            .catch(() => toastMessage('削除に失敗しました'));
         } else {
           allRankingData = allRankingData.filter(r => r.username !== name);
           localStorage.setItem('rank_v5_all', JSON.stringify(allRankingData));
@@ -1112,7 +1580,7 @@
           currentUsername = '';
           isNameLocked = false;
           updateNameLockStatus();
-          toastMessage(`「${name}」のアカウントと記録を削除しました (ローカル)`);
+          toastMessage('アカウントと記録を削除しました (ローカル)');
           renderRanking();
           resetGame();
           stopBgm();
@@ -1124,27 +1592,8 @@
       // ============================================================
       function toastMessage(msg) {
         toast.textContent = msg;
-        setTimeout(() => {
-          if (toast.textContent === msg) {
-            toast.textContent = '挑戦ボタンでスタート';
-          }
-        }, 3000);
+        setTimeout(() => { if (toast.textContent === msg) toast.textContent = '挑戦ボタンでスタート'; }, 3000);
       }
-
-      // ============================================================
-      //  タブ切り替え
-      // ============================================================
-      tabs.forEach(btn => {
-        btn.addEventListener('click', () => {
-          tabs.forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          Object.keys(contents).forEach(key => {
-            const el = contents[key];
-            const id = `tab${key.charAt(0).toUpperCase() + key.slice(1)}`;
-            el.classList.toggle('active', id === btn.dataset.tab);
-          });
-        });
-      });
 
       // ============================================================
       //  ランキング桁タブ
@@ -1154,10 +1603,8 @@
         if (!btn) return;
         const digit = parseInt(btn.dataset.digit, 10);
         if (isNaN(digit)) return;
-
         rankTabContainer.querySelectorAll('.rank-tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-
         selectedDigit = digit;
         renderRanking();
       });
@@ -1168,31 +1615,18 @@
       function loadUsernameFromCookie() {
         const saved = getCookie('eq_username');
         const locked = getCookie('eq_name_locked');
-        if (saved) {
-          usernameInput.value = saved;
-          currentUsername = saved;
-        }
-        if (locked === 'true') {
-          isNameLocked = true;
-        }
+        if (saved) { usernameInput.value = saved;
+          currentUsername = saved; }
+        if (locked === 'true') isNameLocked = true;
         updateNameLockStatus();
       }
 
       saveUsernameBtn.addEventListener('click', () => {
-        if (isNameLocked) {
-          toastMessage('名前は一度設定すると変更できません');
-          return;
-        }
+        if (isNameLocked) { toastMessage('名前は一度設定すると変更できません'); return; }
         const name = usernameInput.value.trim();
-        if (!name) {
-          toastMessage('名前を入力してください');
-          return;
-        }
+        if (!name) { toastMessage('名前を入力してください'); return; }
         const exists = allRankingData.some(r => r.username === name);
-        if (exists) {
-          toastMessage(`「${name}」は既に使用されています`);
-          return;
-        }
+        if (exists) { toastMessage(`「${name}」は既に使用されています`); return; }
         isNameLocked = true;
         setCookie('eq_username', name);
         setCookie('eq_name_locked', 'true');
@@ -1202,7 +1636,7 @@
       });
 
       // ============================================================
-      //  サウンドコントロール
+      //  サウンド
       // ============================================================
       volumeSlider.addEventListener('input', () => {
         masterVolume = parseInt(volumeSlider.value, 10) / 100;
@@ -1212,16 +1646,34 @@
       toggleSoundBtn.addEventListener('click', () => {
         soundEnabled = !soundEnabled;
         toggleSoundBtn.textContent = soundEnabled ? 'オン' : 'オフ';
-        if (!soundEnabled) {
-          stopBgm();
-        } else {
-          initAudio();
-          if (isGameActive && !isSolved) {
-            startBgm();
-          }
-        }
+        if (!soundEnabled) stopBgm();
+        else { initAudio(); if (isGameActive && !isSolved) startBgm(); }
         toastMessage(soundEnabled ? 'サウンドオン' : 'サウンドオフ');
       });
+
+      // ============================================================
+      //  イベント
+      // ============================================================
+      checkBtn.addEventListener('click', checkAnswer);
+      newGameBtn.addEventListener('click', newGame);
+      stopBtn.addEventListener('click', resetGame);
+      deleteAccountBtn.addEventListener('click', deleteAccount);
+
+      battleCreateBtn.addEventListener('click', createBattleRoom);
+      battleJoinBtn.addEventListener('click', joinBattleRoom);
+      battleRandomBtn.addEventListener('click', randomMatch);
+      battleReadyBtn.addEventListener('click', setBattleReady);
+      battleAnswerBtn.addEventListener('click', battleAnswer);
+      battleExitBtn.addEventListener('click', exitBattleRoom);
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          if (document.activeElement === inputX || document.activeElement === inputY) checkAnswer();
+          if (document.activeElement === bInputX || document.activeElement === bInputY) battleAnswer();
+        }
+      });
+
+      digitSelect.addEventListener('change', () => { toastMessage(`桁数を ${digitSelect.value} に変更`); });
 
       // ============================================================
       //  初期化
@@ -1234,29 +1686,11 @@
         checkBtn.disabled = true;
         statusMsg.textContent = '待機';
         resetTimer();
+        updateBattleUI();
+        updateBattleAreas();
 
-        checkBtn.addEventListener('click', checkAnswer);
-        newGameBtn.addEventListener('click', newGame);
-        stopBtn.addEventListener('click', resetGame);
-        deleteAccountBtn.addEventListener('click', deleteAccount);
-
-        document.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' && (document.activeElement === inputX || document.activeElement === inputY)) {
-            checkAnswer();
-          }
-        });
-
-        digitSelect.addEventListener('change', () => {
-          toastMessage(`桁数を ${digitSelect.value} に変更`);
-        });
-
-        // 最初の音声コンテキストはユーザー操作で開く
         document.addEventListener('click', () => {
-          if (!audioCtx) {
-            try {
-              audioCtx = new(window.AudioContext || window.webkitAudioContext)();
-            } catch (e) {}
-          }
+          if (!audioCtx) { try { audioCtx = new(window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
         }, { once: true });
       }
 
