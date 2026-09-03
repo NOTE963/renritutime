@@ -3,126 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>究極連立方程式遊戯 </title>
+  <title>連立方程式 タイムアタック</title>
 
-  <!-- ============================================================ -->
   <!-- PWA マニフェスト -->
-  <!-- ============================================================ -->
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23162b3b'/%3E%3Ctext x='256' y='330' text-anchor='middle' font-size='260' font-weight='bold' fill='%23b3e4ff' font-family='sans-serif'%3E%3C/text%3E%3C/svg%3E" type="image/svg+xml" />
-
-  <!-- ============================================================ -->
-  <!-- サービスワーカーの登録 -->
-  <!-- ============================================================ -->
-  <script>
-    // サービスワーカー登録（PWAインストール対応）
-    if ('serviceWorker' in navigator) {
-      // サービスワーカーコードをインラインで生成
-      const swCode = `
-        self.addEventListener('install', function(e) {
-          e.waitUntil(
-            caches.open('equation-v1').then(function(cache) {
-              return cache.addAll([
-                '/',
-                '/index.html',
-                '/manifest.json'
-              ]);
-            })
-          );
-        });
-        self.addEventListener('fetch', function(e) {
-          e.respondWith(
-            caches.match(e.request).then(function(response) {
-              return response || fetch(e.request);
-            })
-          );
-        });
-        self.addEventListener('activate', function(e) {
-          e.waitUntil(
-            caches.keys().then(function(keyList) {
-              return Promise.all(keyList.map(function(key) {
-                if (key !== 'equation-v1') {
-                  return caches.delete(key);
-                }
-              }));
-            })
-          );
-        });
-      `;
-
-      try {
-        const blob = new Blob([swCode], { type: 'application/javascript' });
-        const swUrl = URL.createObjectURL(blob);
-
-        navigator.serviceWorker.register(swUrl, { scope: '/' })
-          .then(function(reg) {
-            console.log('Service Worker 登録成功');
-          })
-          .catch(function(err) {
-            console.log('Service Worker 登録失敗:', err);
-          });
-      } catch (e) {
-        console.log('Service Worker 生成エラー:', e);
-      }
-    }
-
-    // インストールプロンプト表示制御
-    let deferredPrompt = null;
-    let installPromptShown = false;
-
-    window.addEventListener('beforeinstallprompt', function(e) {
-      e.preventDefault();
-      deferredPrompt = e;
-      installPromptShown = true;
-      // インストールボタンを表示
-      const installBtn = document.getElementById('installBtn');
-      if (installBtn) {
-        installBtn.style.display = 'inline-block';
-        installBtn.textContent = '📲 アプリをインストール';
-      }
-    });
-
-    // インストール実行
-    function installApp() {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(function(choiceResult) {
-          if (choiceResult.outcome === 'accepted') {
-            console.log('ユーザーがインストールを承諾しました');
-          } else {
-            console.log('ユーザーがインストールを拒否しました');
-          }
-          deferredPrompt = null;
-          const installBtn = document.getElementById('installBtn');
-          if (installBtn) installBtn.style.display = 'none';
-        });
-      } else {
-        // フォールバック：ブラウザのインストール機能を呼び出す
-        alert('インストールプロンプトが表示されませんでした。\nブラウザのメニューから「ホーム画面に追加」をお試しください。');
-      }
-    }
-
-    // インストール完了イベント
-    window.addEventListener('appinstalled', function() {
-      console.log('アプリがインストールされました');
-      const installBtn = document.getElementById('installBtn');
-      if (installBtn) installBtn.style.display = 'none';
-    });
-
-    // ページ読み込み後にインストールボタンを表示（beforeinstallpromptが来なかった場合のフォールバック）
-    window.addEventListener('load', function() {
-      // beforeinstallpromptが1秒以内に来なかったらフォールバック表示
-      setTimeout(function() {
-        if (!installPromptShown) {
-          const installBtn = document.getElementById('installBtn');
-          if (installBtn && navigator.userAgent.includes('Chrome')) {
-            installBtn.style.display = 'inline-block';
-            installBtn.textContent = '📲 アプリをインストール';
-          }
-        }
-      }, 3000);
-    });
-  </script>
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
@@ -1093,10 +978,50 @@
 
   <script>
     // ============================================================
+    //  PWA インストール
+    // ============================================================
+    let deferredPrompt = null;
+    let installPromptShown = false;
+
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      installPromptShown = true;
+      const installBtn = document.getElementById('installBtn');
+      if (installBtn) {
+        installBtn.style.display = 'inline-block';
+        installBtn.textContent = '📲 アプリをインストール';
+      }
+    });
+
+    function installApp() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function(choiceResult) {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('ユーザーがインストールを承諾しました');
+          } else {
+            console.log('ユーザーがインストールを拒否しました');
+          }
+          deferredPrompt = null;
+          const installBtn = document.getElementById('installBtn');
+          if (installBtn) installBtn.style.display = 'none';
+        });
+      } else {
+        alert('インストールプロンプトが表示されませんでした。\nブラウザのメニューから「ホーム画面に追加」をお試しください。');
+      }
+    }
+
+    window.addEventListener('appinstalled', function() {
+      console.log('アプリがインストールされました');
+      const installBtn = document.getElementById('installBtn');
+      if (installBtn) installBtn.style.display = 'none';
+    });
+
+    // ============================================================
     //  データ引き継ぎ機能
     // ============================================================
     (function() {
-      // エクスポート
       document.getElementById('exportDataBtn').addEventListener('click', function() {
         try {
           const data = {
@@ -1107,22 +1032,20 @@
             version: '1.0'
           };
           const json = JSON.stringify(data);
-          // 圧縮（簡易的）
           let encoded = '';
           for (let i = 0; i < json.length; i++) {
             encoded += String.fromCharCode(json.charCodeAt(i) + 1);
           }
           const code = btoa(encoded);
           document.getElementById('exportCode').value = code;
-          document.getElementById('dataTransferStatus').textContent = '✅ エクスポートコードを生成しました（コピーして保存）';
+          document.getElementById('dataTransferStatus').textContent = '✅ エクスポートコードを生成しました';
           document.getElementById('dataTransferStatus').style.color = '#7bc9a0';
         } catch (e) {
-          document.getElementById('dataTransferStatus').textContent = '❌ エクスポートに失敗しました: ' + e.message;
+          document.getElementById('dataTransferStatus').textContent = '❌ エクスポートに失敗しました';
           document.getElementById('dataTransferStatus').style.color = '#f5a3a3';
         }
       });
 
-      // インポート
       document.getElementById('importDataBtn').addEventListener('click', function() {
         const code = document.getElementById('importCode').value.trim();
         if (!code) {
@@ -1130,17 +1053,13 @@
           document.getElementById('dataTransferStatus').style.color = '#f5a3a3';
           return;
         }
-
         try {
-          // デコード
           const decoded = atob(code);
           let json = '';
           for (let i = 0; i < decoded.length; i++) {
             json += String.fromCharCode(decoded.charCodeAt(i) - 1);
           }
           const data = JSON.parse(json);
-
-          // データ復元
           let restored = 0;
           if (data.username) {
             localStorage.setItem('eq_username', data.username);
@@ -1159,8 +1078,6 @@
             localStorage.setItem('rank_v5_all', data.ranking);
             restored++;
           }
-
-          // UI更新
           if (data.username) {
             const nameLocked = localStorage.getItem('eq_name_locked') === 'true';
             if (nameLocked) {
@@ -1170,8 +1087,6 @@
               document.getElementById('nameLockStatus').style.color = '#f5a3a3';
             }
           }
-
-          // メモ復元
           if (data.memo) {
             try {
               const memoData = JSON.parse(data.memo);
@@ -1188,29 +1103,12 @@
               }
             } catch (e) {}
           }
-
-          // ランキング復元
-          if (data.ranking) {
-            try {
-              const rankingData = JSON.parse(data.ranking);
-              // ランキング表示を更新するためにリロード
-              window.location.reload();
-            } catch (e) {}
-          }
-
-          document.getElementById('dataTransferStatus').textContent =
-            `✅ ${restored}項目のデータを復元しました！ (再読み込み中...)`;
+          document.getElementById('dataTransferStatus').textContent = `✅ ${restored}項目のデータを復元しました！`;
           document.getElementById('dataTransferStatus').style.color = '#7bc9a0';
-
-          // 1秒後にリロード（ランキング反映のため）
-          setTimeout(() => {
-            window.location.reload();
-          }, 1500);
-
+          setTimeout(() => { window.location.reload(); }, 1000);
         } catch (e) {
           document.getElementById('dataTransferStatus').textContent = '❌ 復元に失敗しました: コードが正しくありません';
           document.getElementById('dataTransferStatus').style.color = '#f5a3a3';
-          console.error('インポートエラー:', e);
         }
       });
     })();
@@ -1995,22 +1893,36 @@
         });
       }
 
+      // ============================================================
+      //  ルーム削除機能（プレイヤーがいないルームを削除）
+      // ============================================================
       function checkAndDeleteRoom(roomId) {
-        battleRef.child(roomId).once('value', (snap) => {
-          const data = snap.val();
-          if (!data) return;
-          const players = data.players || {};
-          const playerCount = Object.keys(players).length;
-          if (playerCount === 0) {
-            battleRef.child(roomId).remove().then(() => {
-              console.log('ルームを削除しました:', roomId);
-            }).catch(err => {
-              console.warn('ルーム削除エラー:', err);
-            });
-          }
-        });
+        if (!roomId) return;
+        battleRef.child(roomId).once('value')
+          .then((snap) => {
+            const data = snap.val();
+            if (!data) return;
+            const players = data.players || {};
+            const playerCount = Object.keys(players).length;
+            // プレイヤーが0人ならルームを削除
+            if (playerCount === 0) {
+              battleRef.child(roomId).remove()
+                .then(() => {
+                  console.log('🗑️ ルームを削除しました:', roomId);
+                })
+                .catch((err) => {
+                  console.warn('ルーム削除エラー:', err);
+                });
+            }
+          })
+          .catch((err) => {
+            console.warn('ルーム確認エラー:', err);
+          });
       }
 
+      // ============================================================
+      //  対戦モード継続
+      // ============================================================
       function updateContinueStatus(usernames) {
         const total = usernames.length;
         const pressed = Object.keys(continuePressed).filter(n => continuePressed[n] === true).length;
@@ -2510,9 +2422,12 @@
           updates[`players/${username}`] = null;
           updates[`votes/${username}`] = null;
           updates[`continue/${username}`] = null;
-          battleRef.child(roomId).update(updates).then(() => {
-            checkAndDeleteRoom(roomId);
-          }).catch(() => {});
+          battleRef.child(roomId).update(updates)
+            .then(() => {
+              // プレイヤーが0人になったらルーム削除
+              checkAndDeleteRoom(roomId);
+            })
+            .catch(() => {});
         }
         battleRoomId = null;
         battleIsReady = false;
@@ -2726,6 +2641,28 @@
         battleContinueArea.style.display = 'none';
         continueStatus.textContent = '';
         continuePressed = {};
+
+        // 古い空ルームをクリーンアップ（起動時）
+        if (battleRef) {
+          battleRef.once('value', (snap) => {
+            const data = snap.val();
+            if (data) {
+              const keys = Object.keys(data);
+              keys.forEach(key => {
+                const room = data[key];
+                const players = room.players || {};
+                const playerCount = Object.keys(players).length;
+                if (playerCount === 0) {
+                  battleRef.child(key).remove()
+                    .then(() => {
+                      console.log('🗑️ 起動時に空ルームを削除:', key);
+                    })
+                    .catch(() => {});
+                }
+              });
+            }
+          });
+        }
 
         document.addEventListener('click', () => {
           if (!audioCtx) { try { audioCtx = new(window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
