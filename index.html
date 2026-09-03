@@ -1518,7 +1518,8 @@
         });
 
         // 投票状況表示
-        let statusText = `投票済み: ${totalVoters}/${Object.keys(players || {}).length}人`;
+        const playerCount = Object.keys(players || {}).length;
+        let statusText = `投票済み: ${totalVoters}/${playerCount}人`;
         if (totalVoters > 0) {
           const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
           const detail = sorted.map(([d, c]) => `${d}桁(${c}票)`).join(' ');
@@ -1527,7 +1528,6 @@
         voteStatus.textContent = statusText;
 
         // 全員投票完了したら確定
-        const playerCount = Object.keys(players || {}).length;
         if (totalVoters >= playerCount && playerCount >= 2) {
           // 最多投票の桁数を決定
           let maxCount = 0;
@@ -1848,7 +1848,7 @@
           battleRound = data.round || 0;
           updateBattleUI();
 
-          // 投票表示
+          // 投票表示 - 全員が対象（作成者も含む）
           const votes = data.votes || {};
           const isVotingPhase = data.status === 'voting' || (data.status === 'waiting' && usernames.length >= 2);
           if (isVotingPhase && !data.equation) {
