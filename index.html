@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>連立方程式 タイムアタック</title>
 
-  <!-- PWA マニフェスト -->
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23162b3b'/%3E%3Ctext x='256' y='330' text-anchor='middle' font-size='260' font-weight='bold' fill='%23b3e4ff' font-family='sans-serif'%3E%3C/text%3E%3C/svg%3E" type="image/svg+xml" />
-
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
   </script>
@@ -101,56 +97,29 @@
       margin-top: 8px;
     }
 
-    /* ===== ルーム全削除エリア ===== */
-    .room-delete-area {
-      background: #0f1e2b;
-      border-radius: 24px;
-      padding: 16px;
-      margin-top: 12px;
-      border: 1px solid #b14f4f;
+    /* ===== ランキングタブのレート表示 ===== */
+    .rate-rank {
+      color: #f5d742;
+      font-weight: 700;
     }
-    .room-delete-area h4 {
+    .rate-positive {
+      color: #7bc9a0;
+    }
+    .rate-negative {
       color: #f5a3a3;
-      font-size: 0.9rem;
-      margin-bottom: 10px;
     }
-    .room-delete-area .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      margin-bottom: 6px;
+    .rank-item-rate {
+      font-weight: 600;
+      color: #b3e4ff;
     }
-    .room-delete-area .row label {
+    .rank-reset-info {
       color: #8aacbf;
-      font-size: 0.8rem;
-      min-width: 100px;
-    }
-    .room-delete-area .row input {
-      background: #162b3a;
-      border: 1px solid #2f5066;
-      padding: 6px 12px;
-      border-radius: 20px;
-      color: white;
-      font-size: 0.85rem;
-      outline: none;
-      flex: 1;
-      min-width: 120px;
-    }
-    .room-delete-area .row input:focus {
-      border-color: #5a9ec9;
-    }
-    .room-delete-area .btn-danger {
-      background: #b14f4f;
-      border-bottom-color: #752f2f;
-    }
-    .room-delete-status {
-      color: #7b9eb3;
-      font-size: 0.75rem;
-      margin-top: 8px;
+      font-size: 0.7rem;
+      text-align: right;
+      margin-top: 6px;
     }
 
-    /* ===== 自分が作成したルーム一覧 ===== */
+    /* ===== 自分の作成ルーム一覧 ===== */
     .my-rooms-area {
       background: #0f1e2b;
       border-radius: 24px;
@@ -829,6 +798,17 @@
       gap: 10px;
       margin: 12px 0;
     }
+    .rank-rate-header {
+      display: flex;
+      justify-content: space-between;
+      color: #8aacbf;
+      font-size: 0.75rem;
+      padding: 4px 14px;
+      border-bottom: 1px solid #234a5e;
+    }
+    .rank-rate-header span:last-child {
+      color: #f5d742;
+    }
     @media (max-width: 500px) {
       .app {
         padding: 14px 10px;
@@ -1009,17 +989,16 @@
     <div id="tabRanking" class="tab-content">
       <div class="rank-section">
         <div class="rank-header">
-          <span>ランキング</span>
-          <div class="rank-tabs" id="rankTabContainer">
-            <button class="rank-tab-btn active" data-digit="1">1桁</button>
-            <button class="rank-tab-btn" data-digit="2">2桁</button>
-            <button class="rank-tab-btn" data-digit="3">3桁</button>
-            <button class="rank-tab-btn" data-digit="4">4桁</button>
-            <button class="rank-tab-btn" data-digit="5">5桁</button>
-          </div>
+          <span>🏆 レートランキング</span>
+          <span style="font-size:0.8rem; color:#8aacbf;">上位10人</span>
+        </div>
+        <div class="rank-rate-header">
+          <span>順位 / プレイヤー</span>
+          <span>レート</span>
         </div>
         <ul class="rank-list" id="rankingList"><li class="empty">読み込み中...</li></ul>
-        <div class="footer">Firebase · 一人1記録 · 桁別</div>
+        <div class="rank-reset-info" id="rankResetInfo">🔄 毎週月曜リセット</div>
+        <div class="footer">Firebase · レート制</div>
       </div>
       <div class="memo-section">
         <div class="memo-header">
@@ -1075,17 +1054,6 @@
           <div class="data-transfer-status" id="dataTransferStatus">データはローカルに保存されています</div>
         </div>
 
-        <!-- ルーム全削除エリア -->
-        <div class="room-delete-area">
-          <h4>🗑️ ルーム全削除（管理者用）</h4>
-          <div class="row">
-            <label>パスワード</label>
-            <input type="password" id="deletePassword" placeholder="パスワードを入力" />
-            <button class="btn btn-danger" id="deleteAllRoomsBtn" style="flex:0 1 auto; padding:6px 14px;">全削除</button>
-          </div>
-          <div class="room-delete-status" id="roomDeleteStatus">⚠️ パスワード: </div>
-        </div>
-
         <!-- 自分の作成ルーム一覧 -->
         <div class="my-rooms-area">
           <h4>📁 作成したルーム（最大3つ）</h4>
@@ -1110,96 +1078,6 @@
   </div>
 
   <script>
-    // ============================================================
-    //  ルーム全削除機能
-    // ============================================================
-    (function() {
-      const PASSWORD = 'dxpky9';
-
-      document.getElementById('deleteAllRoomsBtn').addEventListener('click', function() {
-        const password = document.getElementById('deletePassword').value.trim();
-        const statusEl = document.getElementById('roomDeleteStatus');
-
-        if (password !== PASSWORD) {
-          statusEl.textContent = '❌ パスワードが間違っています';
-          statusEl.style.color = '#f5a3a3';
-          return;
-        }
-
-        if (!confirm('⚠️ 全てのルームを削除しますか？\nこの操作は取り消せません！')) {
-          return;
-        }
-
-        if (!window.battleRef) {
-          statusEl.textContent = '❌ Firebaseに接続されていません';
-          statusEl.style.color = '#f5a3a3';
-          return;
-        }
-
-        statusEl.textContent = '⏳ ルームを削除中...';
-        statusEl.style.color = '#f5a3a3';
-
-        window.battleRef.once('value')
-          .then((snap) => {
-            const data = snap.val();
-            if (!data) {
-              statusEl.textContent = '✅ 削除するルームはありませんでした';
-              statusEl.style.color = '#7bc9a0';
-              return;
-            }
-
-            const keys = Object.keys(data);
-            const promises = keys.map(key => window.battleRef.child(key).remove());
-            return Promise.all(promises).then(() => keys.length);
-          })
-          .then((count) => {
-            statusEl.textContent = `✅ ${count || 0}件のルームを全て削除しました`;
-            statusEl.style.color = '#7bc9a0';
-            // ルームリスト更新
-            loadMyRooms();
-            // 現在のルーム状態をリセット
-            if (window.battleRoomId) {
-              window.battleRoomId = null;
-              window.battleIsReady = false;
-              window.battleIsPlaying = false;
-              window.battleIsFinished = false;
-              window.battleYourScore = 0;
-              window.battleOppScore = 0;
-              window.battleOpponentName = '';
-              window.battleIsMatched = false;
-              const matchArea = document.getElementById('battleMatchArea');
-              const questionArea = document.getElementById('battleQuestionArea');
-              const continueArea = document.getElementById('battleContinueArea');
-              const roomStatusEl = document.getElementById('roomStatus');
-              const opponentDisplay = document.getElementById('opponentNameDisplay');
-              const playerList = document.getElementById('playerList');
-              const result = document.getElementById('battleResult');
-              if (matchArea) matchArea.style.display = 'none';
-              if (questionArea) questionArea.style.display = 'none';
-              if (continueArea) continueArea.style.display = 'none';
-              if (roomStatusEl) roomStatusEl.textContent = '-';
-              if (opponentDisplay) opponentDisplay.textContent = '待機中';
-              if (playerList) playerList.innerHTML = '';
-              if (result) { result.style.display = 'none';
-                result.textContent = ''; }
-              updateBattleUI();
-            }
-          })
-          .catch((err) => {
-            statusEl.textContent = '❌ 削除に失敗しました: ' + err.message;
-            statusEl.style.color = '#f5a3a3';
-            console.error('ルーム全削除エラー:', err);
-          });
-      });
-
-      // Enterキーで削除実行
-      document.getElementById('deletePassword').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-          document.getElementById('deleteAllRoomsBtn').click();
-        }
-      });
-    })();
-
     // ============================================================
     //  自分の作成ルーム一覧 & 削除機能
     // ============================================================
@@ -1232,7 +1110,6 @@
             });
           }
 
-          // 作成日時順にソート（新しい順）
           myRooms.sort((a, b) => b.timestamp - a.timestamp);
 
           if (myRooms.length === 0) {
@@ -1258,7 +1135,6 @@
             `;
             listEl.appendChild(item);
 
-            // 削除ボタン
             const deleteBtn = item.querySelector('.btn');
             deleteBtn.addEventListener('click', function(e) {
               e.stopPropagation();
@@ -1266,7 +1142,6 @@
               if (!confirm(`ルーム「${roomId}」を削除しますか？`)) return;
               window.battleRef.child(roomId).remove()
                 .then(() => {
-                  // 現在のルームが削除された場合
                   if (window.battleRoomId === roomId) {
                     window.battleRoomId = null;
                     window.battleIsReady = false;
@@ -1456,6 +1331,7 @@
       let db = null;
       let rankingRef = null;
       let battleRef = null;
+      let rateRef = null;
 
       // 他の関数からアクセスできるようにグローバルに公開
       window.battleRef = null;
@@ -1473,6 +1349,7 @@
         db = firebase.database();
         rankingRef = db.ref('ranking_v5');
         battleRef = db.ref('battle_rooms');
+        rateRef = db.ref('rate_ranking');
         window.battleRef = battleRef;
         console.log('Firebase 接続成功');
       } catch (e) {
@@ -1481,6 +1358,113 @@
 
       // 最大作成ルーム数
       const MAX_CREATED_ROOMS = 3;
+
+      // レート関連
+      const INITIAL_RATE = 1500;
+      const RATE_K = 32;
+
+      // ============================================================
+      //  レート計算関数
+      // ============================================================
+      function getRateChange(winnerRate, loserRate) {
+        const expected = 1 / (1 + Math.pow(10, (loserRate - winnerRate) / 400));
+        return Math.round(RATE_K * (1 - expected));
+      }
+
+      function updateRate(winner, loser, callback) {
+        if (!rateRef) return;
+
+        rateRef.child(winner).once('value', (snap1) => {
+          const winnerData = snap1.val() || { rate: INITIAL_RATE, wins: 0, losses: 0, lastWeek: getWeekKey() };
+          rateRef.child(loser).once('value', (snap2) => {
+            const loserData = snap2.val() || { rate: INITIAL_RATE, wins: 0, losses: 0, lastWeek: getWeekKey() };
+
+            const change = getRateChange(winnerData.rate, loserData.rate);
+            const newWinnerRate = winnerData.rate + change;
+            const newLoserRate = loserData.rate - change;
+
+            const weekKey = getWeekKey();
+
+            const updates = {};
+            updates[`${winner}/rate`] = newWinnerRate;
+            updates[`${winner}/wins`] = (winnerData.wins || 0) + 1;
+            updates[`${winner}/lastWeek`] = weekKey;
+            updates[`${loser}/rate`] = newLoserRate;
+            updates[`${loser}/losses`] = (loserData.losses || 0) + 1;
+            updates[`${loser}/lastWeek`] = weekKey;
+
+            rateRef.update(updates).then(() => {
+              if (callback) callback(newWinnerRate, newLoserRate);
+            }).catch((err) => {
+              console.error('レート更新エラー:', err);
+              if (callback) callback(winnerData.rate, loserData.rate);
+            });
+          });
+        });
+      }
+
+      function getWeekKey() {
+        const now = new Date();
+        const day = now.getDay(); // 0=日曜
+        const diff = (day === 0 ? 6 : day - 1); // 月曜始まり
+        const monday = new Date(now);
+        monday.setDate(now.getDate() - diff);
+        monday.setHours(0, 0, 0, 0);
+        return monday.toISOString().split('T')[0];
+      }
+
+      // ============================================================
+      //  レートランキング表示
+      // ============================================================
+      function loadRateRanking() {
+        const listEl = document.getElementById('rankingList');
+        const resetInfo = document.getElementById('rankResetInfo');
+        if (!rateRef) {
+          listEl.innerHTML = '<li class="empty">Firebaseに接続されていません</li>';
+          return;
+        }
+
+        const weekKey = getWeekKey();
+        resetInfo.textContent = `🔄 今週: ${weekKey} 〜 毎週月曜リセット`;
+
+        rateRef.orderByChild('rate').limitToLast(10).once('value')
+          .then((snap) => {
+            const data = snap.val();
+            if (!data) {
+              listEl.innerHTML = '<li class="empty">まだレート記録がありません</li>';
+              return;
+            }
+
+            const entries = Object.keys(data).map(key => ({
+              name: key,
+              rate: data[key].rate || INITIAL_RATE,
+              wins: data[key].wins || 0,
+              losses: data[key].losses || 0,
+              lastWeek: data[key].lastWeek || ''
+            }));
+
+            // レート順にソート（高い順）
+            entries.sort((a, b) => b.rate - a.rate);
+
+            // 上位10人表示
+            const top10 = entries.slice(0, 10);
+
+            listEl.innerHTML = '';
+            top10.forEach((item, index) => {
+              const li = document.createElement('li');
+              const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+              li.innerHTML = `
+                <span><span class="rank">${medal}</span> ${item.name}</span>
+                <span class="rank-item-rate">${item.rate} <span style="font-size:0.7rem;color:#8aacbf;">(${item.wins}W/${item.losses}L)</span></span>
+              `;
+              listEl.appendChild(li);
+            });
+          })
+          .catch((err) => {
+            console.error('レートランキング読み込みエラー:', err);
+            listEl.innerHTML = '<li class="empty">読み込みエラー</li>';
+          });
+      }
 
       // ============================================================
       //  サウンド
@@ -1658,9 +1642,11 @@
           tabContents[tabId].classList.add('active');
         }
         saveAllMemo();
-        // 設定タブが開かれたらルーム一覧更新
         if (tabId === 'tabSettings') {
           loadMyRooms();
+        }
+        if (tabId === 'tabRanking') {
+          loadRateRanking();
         }
       }
 
@@ -1941,10 +1927,7 @@
           playCorrectSound();
           const name = getUsername();
           const digit = getDigit();
-          const existing = allRankingData.find(r => r.username === name);
-          if (existing) { toastMessage(`「${name}」は既に使用されています`); return; }
-          const entry = { username: name, time: Math.round(finalTime * 10) / 10, digit: digit, timestamp: Date.now() };
-          saveRanking(entry);
+          // レートランキングは別管理なので保存しない
         } else {
           toastMessage('不正解');
           statusMsg.textContent = '不正解';
@@ -1954,56 +1937,7 @@
       }
 
       // ============================================================
-      //  ランキング
-      // ============================================================
-      function saveRanking(entry) {
-        if (rankingRef) { rankingRef.push(entry).catch(() => saveLocal(entry)); } else { saveLocal(entry); }
-        allRankingData.push(entry);
-        renderRanking();
-      }
-
-      function saveLocal(entry) { allRankingData.push(entry);
-        localStorage.setItem('rank_v5_all', JSON.stringify(allRankingData));
-        renderRanking(); }
-
-      function loadRanking() {
-        if (rankingRef) {
-          rankingRef.on('value', (snap) => {
-            const data = snap.val();
-            allRankingData = data ? Object.values(data) : [];
-            renderRanking();
-          }, () => loadLocal());
-        } else { loadLocal(); }
-      }
-
-      function loadLocal() {
-        try {
-          const stored = localStorage.getItem('rank_v5_all');
-          allRankingData = stored ? JSON.parse(stored) : [];
-        } catch (e) { allRankingData = []; }
-        renderRanking();
-      }
-
-      function renderRanking() {
-        const filtered = allRankingData.filter(item => item.digit === selectedDigit);
-        filtered.sort((a, b) => a.time - b.time);
-        const top3 = filtered.slice(0, 3);
-        rankingList.innerHTML = '';
-        if (!top3 || top3.length === 0) {
-          rankingList.innerHTML = `<li class="empty">${selectedDigit}桁の記録はまだありません</li>`;
-          return;
-        }
-        top3.forEach((item, i) => {
-          const li = document.createElement('li');
-          const medal = i === 0 ? '1' : i === 1 ? '2' : '3';
-          li.innerHTML =
-            `<span><span class="rank">${medal}</span> ${item.username}</span><span class="time">${item.time}s</span>`;
-          rankingList.appendChild(li);
-        });
-      }
-
-      // ============================================================
-      //  対戦モード (3問先取)
+      //  対戦モード (3問先取 + レート)
       // ============================================================
       function battleToastMsg(msg) {
         battleToast.textContent = msg;
@@ -2169,6 +2103,7 @@
           if (!data) return;
           const players = data.players || {};
           const usernames = Object.keys(players);
+          const username = getUsername();
 
           let winner = null;
           let winnerScore = 0;
@@ -2182,12 +2117,24 @@
 
           if (winner) {
             battleIsFinished = true;
-            const isYou = winner === getUsername();
+            const isYou = winner === username;
             showBattleResult(`${isYou ? 'あなた' : winner} の勝利！ (${winnerScore}問正解)`);
             battleToastMsg(`対戦終了！ ${winner} の勝利！`);
             battleReadyBtn.disabled = true;
             battleAnswerBtn.disabled = true;
             battleRef.child(roomId).update({ status: 'finished' });
+
+            // レート更新（勝者と敗者）
+            const losers = usernames.filter(n => n !== winner);
+            if (losers.length > 0 && rateRef) {
+              // 各敗者に対してレート更新（簡易的：最初の敗者とのみ）
+              const loser = losers[0];
+              updateRate(winner, loser, (newWinnerRate, newLoserRate) => {
+                battleToastMsg(`レート更新: ${winner} ${newWinnerRate} (+${newWinnerRate - (players[winner]?.rate || INITIAL_RATE)})`);
+                loadRateRanking();
+              });
+            }
+
             battleContinueArea.style.display = 'flex';
             continuePressed = {};
             updateContinueStatus(usernames);
@@ -2380,7 +2327,6 @@
 
         const username = getUsername();
 
-        // 作成制限チェック
         checkRoomLimit().then((canCreate) => {
           if (!canCreate) {
             battleToastMsg(`ルームは最大${MAX_CREATED_ROOMS}つまでしか作成できません`);
@@ -2706,7 +2652,6 @@
           }
 
           updateBattleAreas();
-          // ルームリスト更新
           loadMyRooms();
         });
       }
@@ -2861,52 +2806,20 @@
       function deleteAccount() {
         const name = getUsername();
         if (!name || name === '名無し') { toastMessage('先にユーザー名を設定してください'); return; }
-        const myEntry = allRankingData.find(r => r.username === name);
-        if (!myEntry) { toastMessage(`「${name}」の記録は見つかりません`); return; }
         if (!confirm(`「${name}」のアカウントと全ての記録を削除しますか？`)) return;
-        if (rankingRef) {
-          rankingRef.once('value')
-            .then((snap) => {
-              const data = snap.val();
-              if (!data) { toastMessage('削除するデータがありません'); return; }
-              const updates = {};
-              let found = false;
-              Object.keys(data).forEach(key => {
-                if (data[key].username === name) { updates[key] = null;
-                  found = true; }
-              });
-              if (!found) { toastMessage(`「${name}」の記録は見つかりません`); return; }
-              return rankingRef.update(updates);
-            })
-            .then(() => {
-              allRankingData = allRankingData.filter(r => r.username !== name);
-              localStorage.setItem('rank_v5_all', JSON.stringify(allRankingData));
-              deleteCookie('eq_username');
-              deleteCookie('eq_name_locked');
-              usernameInput.value = '';
-              currentUsername = '';
-              isNameLocked = false;
-              updateNameLockStatus();
-              toastMessage(`「${name}」のアカウントと記録を削除しました`);
-              renderRanking();
-              resetGame();
-              stopBgm();
-            })
-            .catch(() => toastMessage('削除に失敗しました'));
-        } else {
-          allRankingData = allRankingData.filter(r => r.username !== name);
-          localStorage.setItem('rank_v5_all', JSON.stringify(allRankingData));
-          deleteCookie('eq_username');
-          deleteCookie('eq_name_locked');
-          usernameInput.value = '';
-          currentUsername = '';
-          isNameLocked = false;
-          updateNameLockStatus();
-          toastMessage('アカウントと記録を削除しました (ローカル)');
-          renderRanking();
-          resetGame();
-          stopBgm();
+        // レートランキングから削除
+        if (rateRef) {
+          rateRef.child(name).remove().catch(() => {});
         }
+        toastMessage(`「${name}」のアカウントと記録を削除しました`);
+        // Cookie削除
+        deleteCookie('eq_username');
+        deleteCookie('eq_name_locked');
+        usernameInput.value = '';
+        currentUsername = '';
+        isNameLocked = false;
+        updateNameLockStatus();
+        loadRateRanking();
       }
 
       // ============================================================
@@ -2918,18 +2831,9 @@
       }
 
       // ============================================================
-      //  ランキング桁タブ
+      //  ランキング桁タブ（旧ランキングはレートランキングに置き換え）
       // ============================================================
-      rankTabContainer.addEventListener('click', (e) => {
-        const btn = e.target.closest('.rank-tab-btn');
-        if (!btn) return;
-        const digit = parseInt(btn.dataset.digit, 10);
-        if (isNaN(digit)) return;
-        rankTabContainer.querySelectorAll('.rank-tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        selectedDigit = digit;
-        renderRanking();
-      });
+      // レートランキングはloadRateRankingで表示
 
       // ============================================================
       //  ユーザー名
@@ -2943,18 +2847,46 @@
         updateNameLockStatus();
       }
 
-      saveUsernameBtn.addEventListener('click', () => {
+      saveUsernameBtn.addEventListener('click', function() {
         if (isNameLocked) { toastMessage('名前は一度設定すると変更できません'); return; }
         const name = usernameInput.value.trim();
         if (!name) { toastMessage('名前を入力してください'); return; }
-        const exists = allRankingData.some(r => r.username === name);
-        if (exists) { toastMessage(`「${name}」は既に使用されています`); return; }
-        isNameLocked = true;
-        setCookie('eq_username', name);
-        setCookie('eq_name_locked', 'true');
-        currentUsername = name;
-        updateNameLockStatus();
-        toastMessage(`ユーザー名: ${name} を保存しました (変更不可)`);
+        // レートランキングに同名が存在するか確認
+        if (rateRef) {
+          rateRef.child(name).once('value', (snap) => {
+            if (snap.exists() && name !== getUsername()) {
+              toastMessage(`「${name}」は既に使用されています`);
+              return;
+            }
+            isNameLocked = true;
+            setCookie('eq_username', name);
+            setCookie('eq_name_locked', 'true');
+            currentUsername = name;
+            updateNameLockStatus();
+            toastMessage(`ユーザー名: ${name} を保存しました (変更不可)`);
+            // レート初期登録
+            if (rateRef) {
+              rateRef.child(name).once('value', (snap2) => {
+                if (!snap2.exists()) {
+                  rateRef.child(name).set({
+                    rate: INITIAL_RATE,
+                    wins: 0,
+                    losses: 0,
+                    lastWeek: getWeekKey()
+                  });
+                }
+              });
+            }
+            loadRateRanking();
+          });
+        } else {
+          isNameLocked = true;
+          setCookie('eq_username', name);
+          setCookie('eq_name_locked', 'true');
+          currentUsername = name;
+          updateNameLockStatus();
+          toastMessage(`ユーザー名: ${name} を保存しました (変更不可)`);
+        }
       });
 
       // ============================================================
@@ -3007,7 +2939,6 @@
 
       digitSelect.addEventListener('change', () => { toastMessage(`桁数を ${digitSelect.value} に変更`); });
 
-      // ユーザー名変更時にルームリスト更新
       saveUsernameBtn.addEventListener('click', function() {
         setTimeout(loadMyRooms, 500);
       });
@@ -3017,7 +2948,7 @@
       // ============================================================
       function init() {
         loadUsernameFromCookie();
-        loadRanking();
+        loadRateRanking();
         loadAllMemo();
         isGameActive = false;
         isSolved = false;
@@ -3052,7 +2983,6 @@
           });
         }
 
-        // ルームリスト読み込み
         setTimeout(loadMyRooms, 1000);
 
         document.addEventListener('click', () => {
