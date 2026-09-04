@@ -1172,6 +1172,7 @@
       const MAX_CREATED_ROOMS = 3;
       const INITIAL_RATE = 1500;
       const RATE_K = 32;
+      const MATCHING_TIMEOUT = 60000; // 60秒
 
       function getWeekKey() {
         const now = new Date();
@@ -1413,6 +1414,7 @@
       let matchTimeout = null;
       let myVote = null;
       let continuePressed = {};
+      let isMatching = false;
       const MAX_PLAYERS = 2;
 
       // 設定
@@ -1728,7 +1730,6 @@
       // ============================================================
       function battleToastMsg(msg) {
         battleToast.textContent = msg;
-        // タイムアウトをリセットして長めに表示
         clearTimeout(battleToast._timeout);
         battleToast._timeout = setTimeout(() => {
           if (battleToast.textContent === msg) {
@@ -2012,17 +2013,20 @@
       }
 
       // ============================================================
-      //  マッチングキュー処理 (修正)
+      //  マッチングキュー処理 (停止ボタンまで継続)
       // ============================================================
       let matchingListener = null;
-      let isMatching = false;
+      let matchingTimeoutId = null;
 
       function startMatching() {
         if (!battleRef || !matchingRef) {
           battleToastMsg('マッチング機能が利用できません');
           return;
         }
-        if (battleWaitingForMatch || isMatching) return;
+        if (battleWaitingForMatch || isMatching) {
+          battleToastMsg('既にマッチング中です');
+          return;
+        }
         const username = getUsername();
         if (!isNameLocked) {
           battleToastMsg('先に名前を設定してください');
@@ -2032,22 +2036,32 @@
         isMatching = true;
         battleWaitingForMatch = true;
         battleStopMatchBtn.style.display = 'inline-block';
+        battleStopMatchBtn.textContent = '停止';
         battleToastMsg('マッチング中...');
 
-        // マッチングキューに自分を登録
-        matchingRef.child(username).set({
-          name: username,
-          timestamp: Date.now(),
-          active: true
-        });
+        // マッチングキューに自分を登録（定期的に更新して生存確認）
+        function updateMatchingQueue() {
+          if (!battleWaitingForMatch || !isMatching) return;
+          matchingRef.child(username).set({
+            name: username,
+            timestamp: Date.now(),
+            active: true
+          }).catch(() => {});
+        }
 
-        // マッチング監視開始（既存のリスナーをクリア）
+        // 初回登録
+        updateMatchingQueue();
+
+        // 定期的にキューを更新（15秒ごと）
+        if (matchingTimeoutId) clearInterval(matchingTimeoutId);
+        matchingTimeoutId = setInterval(updateMatchingQueue, 15000);
+
+        // マッチング監視開始
         if (matchingListener) {
           matchingListener.off();
           matchingListener = null;
         }
 
-        // 新しくリスナーを設定（child_addedとchild_removedを監視）
         matchingListener = matchingRef.on('child_added', (snap) => {
           const data = snap.val();
           const key = snap.key;
@@ -2057,24 +2071,28 @@
           const opponent = key;
           battleToastMsg(`マッチング成功！ ${opponent} と対戦します`);
 
-          // 自分のキューを削除
-          matchingRef.child(username).remove().catch(() => {});
-
-          // 相手のキューも削除
-          matchingRef.child(opponent).remove().catch(() => {});
-
           // マッチング状態をリセット
           isMatching = false;
           battleWaitingForMatch = false;
           battleStopMatchBtn.style.display = 'none';
-          if (matchTimeout) {
-            clearTimeout(matchTimeout);
-            matchTimeout = null;
+          if (matchingTimeoutId) {
+            clearInterval(matchingTimeoutId);
+            matchingTimeoutId = null;
           }
           if (matchingListener) {
             matchingListener.off();
             matchingListener = null;
           }
+          if (matchTimeout) {
+            clearTimeout(matchTimeout);
+            matchTimeout = null;
+          }
+
+          // 自分のキューを削除
+          matchingRef.child(username).remove().catch(() => {});
+
+          // 相手のキューも削除
+          matchingRef.child(opponent).remove().catch(() => {});
 
           // ルーム作成
           const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -2110,21 +2128,17 @@
           });
         });
 
-        // 自分が削除された場合の監視（他のユーザーが退出した場合など）
-        // タイムアウト処理（30秒でキャンセル）
-        if (matchTimeout) clearTimeout(matchTimeout);
-        matchTimeout = setTimeout(() => {
-          if (battleWaitingForMatch || isMatching) {
-            stopRandomMatch();
-            battleToastMsg('マッチングタイムアウトしました');
-          }
-        }, 30000);
+        // タイムアウトはなし（停止ボタンで終了）
       }
 
       function stopRandomMatch() {
         isMatching = false;
         battleWaitingForMatch = false;
         battleStopMatchBtn.style.display = 'none';
+        if (matchingTimeoutId) {
+          clearInterval(matchingTimeoutId);
+          matchingTimeoutId = null;
+        }
         if (matchTimeout) {
           clearTimeout(matchTimeout);
           matchTimeout = null;
@@ -2489,6 +2503,10 @@
         myVote = null;
         continuePressed = {};
         battleStopMatchBtn.style.display = 'none';
+        if (matchingTimeoutId) {
+          clearInterval(matchingTimeoutId);
+          matchingTimeoutId = null;
+        }
         if (matchTimeout) {
           clearTimeout(matchTimeout);
           matchTimeout = null;
