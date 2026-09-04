@@ -134,10 +134,15 @@
     .my-room-item .room-name {
       font-weight: 600;
       color: #b3d4e8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 120px;
     }
     .my-room-item .room-status {
       color: #8aacbf;
       font-size: 0.75rem;
+      white-space: nowrap;
     }
     .my-room-item .btn {
       flex: 0 1 auto;
@@ -214,6 +219,9 @@
       color: #e6f2fa;
       font-weight: 700;
       letter-spacing: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .speed-question .q span {
       color: #b3e4ff;
@@ -284,6 +292,43 @@
     .sub-tab-btn:hover:not(.active) {
       background: #1f384b;
       color: #c5dceb;
+    }
+
+    /* ===== ランキングリスト ===== */
+    .rank-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 14px;
+      margin: 3px 0;
+      background: #1a3343;
+      border-radius: 30px;
+      color: #e6f2fa;
+      border-left: 4px solid #3d7a9e;
+      font-weight: 500;
+      font-size: 0.9rem;
+      align-items: center;
+    }
+    .rank-list .rank {
+      color: #aacde2;
+      font-weight: 700;
+      margin-right: 10px;
+    }
+    .rank-list .time {
+      background: #1d4054;
+      padding: 0 14px;
+      border-radius: 24px;
+      font-weight: 600;
+      color: #b3e4ff;
+      font-size: 0.85rem;
+    }
+    /* 改行防止 */
+    .rank-list li span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .rank-list li .time {
+      white-space: nowrap;
     }
 
     /* ===== 既存のスタイル ===== */
@@ -375,6 +420,9 @@
       border-radius: 30px;
       font-weight: 500;
       font-size: 0.85rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .eq-panel {
       background: #0f1e2b;
@@ -401,6 +449,7 @@
       min-width: 44px;
       text-align: center;
       border: 1px solid #2f5066;
+      white-space: nowrap;
     }
     .input-area {
       display: flex;
@@ -422,6 +471,7 @@
       color: #b2d3e8;
       font-weight: 600;
       font-size: 1.1rem;
+      white-space: nowrap;
     }
     .input-group input {
       background: #162b3a;
@@ -504,6 +554,9 @@
       align-items: center;
       justify-content: center;
       font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .rank-section {
       background: #0f1e2b;
@@ -559,32 +612,6 @@
       overflow-y: auto;
       padding-right: 2px;
     }
-    .rank-list li {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 14px;
-      margin: 3px 0;
-      background: #1a3343;
-      border-radius: 30px;
-      color: #e6f2fa;
-      border-left: 4px solid #3d7a9e;
-      font-weight: 500;
-      font-size: 0.9rem;
-      align-items: center;
-    }
-    .rank-list .rank {
-      color: #aacde2;
-      font-weight: 700;
-      margin-right: 10px;
-    }
-    .rank-list .time {
-      background: #1d4054;
-      padding: 0 14px;
-      border-radius: 24px;
-      font-weight: 600;
-      color: #b3e4ff;
-      font-size: 0.85rem;
-    }
     .empty {
       text-align: center;
       color: #7b9eb3;
@@ -612,6 +639,7 @@
     .setting-row label {
       min-width: 80px;
       font-size: 0.9rem;
+      white-space: nowrap;
     }
     .setting-row input,
     .setting-row select {
@@ -642,6 +670,7 @@
       color: #8aacbf;
       font-size: 0.8rem;
       margin-left: 8px;
+      white-space: nowrap;
     }
     .delete-section {
       margin-top: 10px;
@@ -685,12 +714,17 @@
       padding: 2px 16px;
       border-radius: 30px;
       font-weight: 600;
+      white-space: nowrap;
     }
     .battle-opponent {
       background: #1a3343;
       padding: 2px 16px;
       border-radius: 30px;
       font-size: 0.85rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 120px;
     }
     .battle-actions {
       display: flex;
@@ -757,6 +791,9 @@
       font-weight: 600;
       font-size: 1.0rem;
       border-left: 4px solid #f5a3a3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .battle-room-status {
       color: #7b9eb3;
@@ -780,6 +817,8 @@
       box-shadow: 0 1px 0 #0b1e2b;
       pointer-events: none;
     }
+
+    /* ===== メモ（改行可能） ===== */
     .memo-section {
       margin-top: 16px;
       padding-top: 14px;
@@ -799,6 +838,9 @@
       outline: none;
       font-family: inherit;
       line-height: 1.5;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
     .memo-section textarea:focus {
       border-color: #5a9ec9;
@@ -837,6 +879,7 @@
       font-size: 0.7rem;
       margin-left: 8px;
     }
+
     .player-list {
       display: flex;
       flex-wrap: wrap;
@@ -850,6 +893,7 @@
       font-size: 0.8rem;
       color: #b3d4e8;
       border: 1px solid #2f5066;
+      white-space: nowrap;
     }
     .player-tag.you {
       border-color: #5a9ec9;
@@ -957,6 +1001,12 @@
         width: 80px;
         font-size: 1rem;
       }
+      .battle-opponent {
+        max-width: 80px;
+      }
+      .my-room-item .room-name {
+        max-width: 80px;
+      }
     }
   </style>
 </head>
@@ -974,7 +1024,7 @@
       <button class="tab-btn" data-tab="tabSettings">設定</button>
     </div>
 
-    <!-- ===== タイムアタックタブ（旧挑戦タブ） ===== -->
+    <!-- ===== タイムアタックタブ ===== -->
     <div id="tabTimeAttack" class="tab-content active">
       <div class="status-bar">
         <span class="timer" id="timerDisplay">0.0</span>
@@ -1255,7 +1305,7 @@
               room.status === 'playing' ? '対戦中' :
               room.status === 'finished' ? '終了' : room.status;
             item.innerHTML = `
-              <span class="room-name">${room.id}</span>
+              <span class="room-name" title="${room.id}">${room.id}</span>
               <span class="room-status">${statusText} (${room.players}/${room.maxPlayers}人)</span>
               <button class="btn btn-danger" data-roomid="${room.id}">削除</button>
             `;
@@ -1494,7 +1544,6 @@
             question = `${a} - ${b} = ?`;
             break;
           case '×':
-            // 掛け算は桁数制限を緩和
             const maxMul = Math.min(maxVal, Math.floor(Math.sqrt(1000000)));
             const aMul = Math.floor(Math.random() * (maxMul - minVal + 1)) + minVal;
             const bMul = Math.floor(Math.random() * (maxMul - minVal + 1)) + minVal;
@@ -1502,7 +1551,6 @@
             question = `${aMul} × ${bMul} = ?`;
             break;
           case '÷':
-            // 割り算は割り切れるように
             const bDiv = Math.floor(Math.random() * (maxVal - minVal + 1)) + minVal;
             const result = Math.floor(Math.random() * (maxVal - minVal + 1)) + minVal;
             answer = result;
@@ -1511,7 +1559,6 @@
             break;
         }
 
-        // 答えが大きすぎる場合（100万超）は再生成
         if (Math.abs(answer) > 1000000) {
           return generateSpeedQuestion(digit);
         }
@@ -1524,7 +1571,6 @@
         const digit = parseInt(document.getElementById('digitSelect').value) || 3;
         speedCurrentDigit = digit;
 
-        // 制限時間: 3.5秒 × 桁数
         speedTotalTime = 3.5 * digit;
         speedTimeLeft = speedTotalTime;
         speedScore = 0;
@@ -1542,10 +1588,8 @@
         speedAnswerInput.value = '';
         speedAnswerInput.focus();
 
-        // 最初の問題
         generateNewSpeedQuestion();
 
-        // タイマー開始
         if (speedTimer) clearInterval(speedTimer);
         speedTimer = setInterval(() => {
           speedTimeLeft -= 0.1;
@@ -1556,7 +1600,6 @@
           }
 
           if (speedTimeLeft <= 0) {
-            // タイムアップ！
             clearInterval(speedTimer);
             speedTimer = null;
             speedRunning = false;
@@ -1566,7 +1609,6 @@
             speedTimerEl.classList.remove('warning');
             speedToastMsg(`⏰ タイムアップ！ ${speedScore}問正解！`);
 
-            // ランキング保存（スピード）
             const username = document.getElementById('usernameInput').value.trim() || '名無し';
             const digit = speedCurrentDigit;
             const score = speedScore;
@@ -1599,18 +1641,15 @@
 
         const eps = 0.01;
         if (Math.abs(userAnswer - speedCurrentAnswer) < eps) {
-          // 正解！
           speedScore++;
           speedQuestionsCount++;
           speedScoreEl.textContent = speedScore;
           speedToastMsg('✅ 正解！');
           playCorrectSound();
-          // 次の問題
           generateNewSpeedQuestion();
         } else {
           speedToastMsg(`❌ 不正解 (正解: ${speedCurrentAnswer})`);
           playWrongSound();
-          // 次の問題へ（不正解でも次へ進む）
           generateNewSpeedQuestion();
         }
       }
@@ -1624,14 +1663,12 @@
           timestamp: Date.now()
         };
 
-        // ローカル保存
         let rankings = [];
         try {
           const stored = localStorage.getItem('speed_ranking');
           if (stored) rankings = JSON.parse(stored);
         } catch (e) {}
 
-        // 同名のエントリを削除（一人1記録）
         rankings = rankings.filter(r => r.username !== username);
 
         rankings.push(entry);
@@ -1640,7 +1677,6 @@
 
         localStorage.setItem('speed_ranking', JSON.stringify(rankings));
 
-        // Firebaseにも保存（任意）
         if (window.speedRankingRef) {
           window.speedRankingRef.child(username).set(entry).catch(() => {});
         }
@@ -1651,7 +1687,6 @@
 
       function renderSpeedRanking() {
         const listEl = document.getElementById('rankingList');
-        // 現在表示中のランキングタブがスピードかチェック
         const activeRankTab = document.querySelector('.sub-tab-btn.active');
         if (!activeRankTab || activeRankTab.dataset.rank !== 'speed') return;
 
@@ -1681,7 +1716,6 @@
         });
       }
 
-      // イベント
       speedStartBtn.addEventListener('click', startSpeedGame);
       speedSubmitBtn.addEventListener('click', submitSpeedAnswer);
       speedAnswerInput.addEventListener('keydown', function(e) {
@@ -1695,7 +1729,6 @@
         }
       });
 
-      // ランキングタブ切り替えでスピードランキング表示
       document.addEventListener('rankTabSwitched', function(e) {
         if (e.detail === 'speed') {
           renderSpeedRanking();
@@ -1717,18 +1750,15 @@
           const type = this.dataset.rank;
 
           if (type === 'time') {
-            // タイムランキングは既存のrenderRankingを呼ぶ
             if (typeof renderRanking === 'function') {
               renderRanking();
             }
           } else if (type === 'speed') {
-            // スピードランキング
             if (typeof renderSpeedRanking === 'function') {
               renderSpeedRanking();
             }
           }
 
-          // イベント発火
           document.dispatchEvent(new CustomEvent('rankTabSwitched', { detail: type }));
         });
       });
@@ -1781,7 +1811,6 @@
         console.warn('Firebase 初期化エラー', e);
       }
 
-      // 最大作成ルーム数
       const MAX_CREATED_ROOMS = 3;
 
       // ============================================================
@@ -2063,14 +2092,12 @@
       let battleOpponentName = '';
       let battleMySolved = false;
       let battleOppSolved = false;
-      let battleWaitingForMatch = false;
       let battleIsMatched = false;
       const MAX_PLAYERS = 4;
 
       let myVote = null;
       let voteResults = {};
       let continuePressed = {};
-      let isContinueMode = false;
 
       window.battleRoomId = battleRoomId;
       window.battleIsReady = battleIsReady;
@@ -2290,10 +2317,8 @@
       }
 
       function renderRanking() {
-        // タイムランキング表示（スピードランキングは別関数）
         const activeRankTab = document.querySelector('.sub-tab-btn.active');
         if (activeRankTab && activeRankTab.dataset.rank === 'speed') {
-          // スピードランキングは別関数で表示
           return;
         }
 
@@ -2315,7 +2340,7 @@
       }
 
       // ============================================================
-      //  対戦モード (3問先取)
+      //  対戦モード
       // ============================================================
       function battleToastMsg(msg) {
         battleToast.textContent = msg;
@@ -3215,7 +3240,6 @@
         }, { once: true });
       }
 
-      // renderSpeedRankingをグローバルに公開（スピードモードから呼び出し可能に）
       window.renderSpeedRanking = function() {
         const listEl = document.getElementById('rankingList');
         let rankings = [];
