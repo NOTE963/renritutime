@@ -5,12 +5,288 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>連立方程式 タイムアタック</title>
 
+  <!-- PWA マニフェスト -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23162b3b'/%3E%3Ctext x='256' y='330' text-anchor='middle' font-size='260' font-weight='bold' fill='%23b3e4ff' font-family='sans-serif'%3E%3C/text%3E%3C/svg%3E" type="image/svg+xml" />
+
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
   </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js">
   </script>
   <style>
+    /* ===== インストールボタン ===== */
+    #installBtn {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      background: #3a7da8;
+      border: none;
+      border-bottom: 4px solid #1d4d6a;
+      padding: 14px 32px;
+      border-radius: 60px;
+      font-weight: 700;
+      font-size: 1.0rem;
+      color: #f2fcff;
+      cursor: pointer;
+      box-shadow: 0 8px 0 #0b1e2b, 0 12px 24px rgba(0, 0, 0, 0.6);
+      transition: 0.06s ease;
+      min-width: 200px;
+      text-align: center;
+    }
+    #installBtn:active {
+      transform: translateX(-50%) translateY(4px);
+      box-shadow: 0 4px 0 #0b1e2b;
+    }
+    @media (max-width: 500px) {
+      #installBtn {
+        padding: 12px 20px;
+        font-size: 0.9rem;
+        min-width: 160px;
+        bottom: 12px;
+      }
+    }
+
+    /* ===== 引き継ぎ設定エリア ===== */
+    .data-transfer-area {
+      background: #0f1e2b;
+      border-radius: 24px;
+      padding: 16px;
+      margin-top: 12px;
+      border: 1px solid #2d4a5e;
+    }
+    .data-transfer-area h4 {
+      color: #c8e0ef;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+    .data-transfer-area .btn {
+      flex: 0 1 auto;
+      padding: 8px 18px;
+      font-size: 0.85rem;
+      min-width: 80px;
+    }
+    .data-transfer-area .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .data-transfer-area .row label {
+      color: #8aacbf;
+      font-size: 0.8rem;
+      min-width: 100px;
+    }
+    .data-transfer-area .row input {
+      background: #162b3a;
+      border: 1px solid #2f5066;
+      padding: 6px 12px;
+      border-radius: 20px;
+      color: white;
+      font-size: 0.85rem;
+      outline: none;
+      flex: 1;
+      min-width: 120px;
+    }
+    .data-transfer-area .row input:focus {
+      border-color: #5a9ec9;
+    }
+    .data-transfer-status {
+      color: #7b9eb3;
+      font-size: 0.75rem;
+      margin-top: 8px;
+    }
+
+    /* ===== 自分が作成したルーム一覧 ===== */
+    .my-rooms-area {
+      background: #0f1e2b;
+      border-radius: 24px;
+      padding: 16px;
+      margin-top: 12px;
+      border: 1px solid #2d4a5e;
+    }
+    .my-rooms-area h4 {
+      color: #c8e0ef;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+    .my-rooms-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    .my-room-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #1a3343;
+      padding: 8px 14px;
+      border-radius: 20px;
+      color: #e6f2fa;
+      font-size: 0.85rem;
+    }
+    .my-room-item .room-name {
+      font-weight: 600;
+      color: #b3d4e8;
+    }
+    .my-room-item .room-status {
+      color: #8aacbf;
+      font-size: 0.75rem;
+    }
+    .my-room-item .btn {
+      flex: 0 1 auto;
+      padding: 4px 14px;
+      min-width: auto;
+      font-size: 0.75rem;
+      background: #b14f4f;
+      border-bottom-color: #752f2f;
+    }
+    .my-room-item .btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #0b1e2b;
+    }
+    .my-rooms-empty {
+      color: #7b9eb3;
+      font-size: 0.8rem;
+      text-align: center;
+      padding: 12px 0;
+      font-style: italic;
+    }
+    .my-rooms-limit {
+      color: #f5a3a3;
+      font-size: 0.75rem;
+      text-align: center;
+      margin-top: 6px;
+    }
+
+    /* ===== スピードモード ===== */
+    .speed-status {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0f1e2b;
+      border-radius: 40px;
+      padding: 8px 16px;
+      margin-bottom: 14px;
+      color: #c8dce8;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .speed-score {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #7bc9a0;
+    }
+    .speed-timer {
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      background: #0b1723;
+      padding: 0 16px;
+      border-radius: 30px;
+      color: #b3e4ff;
+      letter-spacing: 1px;
+    }
+    .speed-timer.warning {
+      color: #f5a3a3;
+      animation: blink 0.5s ease-in-out infinite alternate;
+    }
+    @keyframes blink {
+      0% { opacity: 1; }
+      100% { opacity: 0.3; }
+    }
+    .speed-question {
+      background: #0f1e2b;
+      border-radius: 24px;
+      padding: 30px 20px;
+      margin: 6px 0 16px;
+      border: 1px solid #2d4a5e;
+      text-align: center;
+    }
+    .speed-question .q {
+      font-size: 3rem;
+      color: #e6f2fa;
+      font-weight: 700;
+      letter-spacing: 4px;
+    }
+    .speed-question .q span {
+      color: #b3e4ff;
+    }
+    .speed-input-area {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 14px 24px;
+      margin: 14px 0 10px;
+    }
+    .speed-input-area .input-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f1e2b;
+      padding: 2px 14px 2px 18px;
+      border-radius: 40px;
+      border: 1px solid #2f4a5e;
+    }
+    .speed-input-area .input-group label {
+      color: #b2d3e8;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    .speed-input-area .input-group input {
+      background: #162b3a;
+      border: none;
+      padding: 8px 4px;
+      width: 120px;
+      border-radius: 24px;
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-align: center;
+      outline: 1px solid transparent;
+    }
+    .speed-input-area .input-group input:focus {
+      outline: 1px solid #5a9ec9;
+    }
+
+    /* ===== ランキングタブ内のタブ ===== */
+    .sub-tabs {
+      display: flex;
+      gap: 4px;
+      background: #0f1e2b;
+      padding: 4px;
+      border-radius: 30px;
+      border: 1px solid #234a5e;
+      margin-bottom: 12px;
+    }
+    .sub-tab-btn {
+      flex: 1;
+      padding: 6px 12px;
+      border: none;
+      background: transparent;
+      border-radius: 24px;
+      color: #8aadc2;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.8rem;
+      transition: 0.15s;
+    }
+    .sub-tab-btn.active {
+      background: #2a4a60;
+      color: #f0f9ff;
+    }
+    .sub-tab-btn:hover:not(.active) {
+      background: #1f384b;
+      color: #c5dceb;
+    }
+
+    /* ===== 既存のスタイル ===== */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -51,7 +327,7 @@
       background: transparent;
       border-radius: 40px;
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: #8aadc2;
       cursor: pointer;
       transition: 0.15s;
@@ -625,192 +901,6 @@
       gap: 10px;
       margin: 12px 0;
     }
-    .rank-sub-tabs {
-      display: flex;
-      gap: 4px;
-      background: #0f1e2b;
-      padding: 4px;
-      border-radius: 30px;
-      border: 1px solid #234a5e;
-      flex-wrap: wrap;
-      margin-top: 8px;
-    }
-    .rank-sub-tab {
-      padding: 4px 12px;
-      border: none;
-      background: transparent;
-      border-radius: 24px;
-      color: #8aadc2;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 0.75rem;
-      transition: 0.15s;
-    }
-    .rank-sub-tab.active {
-      background: #2a4a60;
-      color: #f0f9ff;
-    }
-    .rank-sub-tab:hover:not(.active) {
-      background: #1f384b;
-      color: #c5dceb;
-    }
-    .rank-rate-header {
-      display: flex;
-      justify-content: space-between;
-      color: #8aacbf;
-      font-size: 0.75rem;
-      padding: 4px 14px;
-      border-bottom: 1px solid #234a5e;
-    }
-    .rank-rate-header span:last-child {
-      color: #f5d742;
-    }
-    .rank-item-rate {
-      font-weight: 600;
-      color: #b3e4ff;
-    }
-    .rank-reset-info {
-      color: #8aacbf;
-      font-size: 0.7rem;
-      text-align: right;
-      margin-top: 6px;
-    }
-    .my-rooms-area {
-      background: #0f1e2b;
-      border-radius: 24px;
-      padding: 16px;
-      margin-top: 12px;
-      border: 1px solid #2d4a5e;
-    }
-    .my-rooms-area h4 {
-      color: #c8e0ef;
-      font-size: 0.9rem;
-      margin-bottom: 10px;
-    }
-    .my-rooms-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      max-height: 150px;
-      overflow-y: auto;
-    }
-    .my-room-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #1a3343;
-      padding: 8px 14px;
-      border-radius: 20px;
-      color: #e6f2fa;
-      font-size: 0.85rem;
-    }
-    .my-room-item .room-name {
-      font-weight: 600;
-      color: #b3d4e8;
-    }
-    .my-room-item .room-status {
-      color: #8aacbf;
-      font-size: 0.75rem;
-    }
-    .my-room-item .btn {
-      flex: 0 1 auto;
-      padding: 4px 14px;
-      min-width: auto;
-      font-size: 0.75rem;
-      background: #b14f4f;
-      border-bottom-color: #752f2f;
-    }
-    .my-room-item .btn:active {
-      transform: translateY(3px);
-      box-shadow: 0 1px 0 #0b1e2b;
-    }
-    .my-rooms-empty {
-      color: #7b9eb3;
-      font-size: 0.8rem;
-      text-align: center;
-      padding: 12px 0;
-      font-style: italic;
-    }
-    .my-rooms-limit {
-      color: #f5a3a3;
-      font-size: 0.75rem;
-      text-align: center;
-      margin-top: 6px;
-    }
-    .data-transfer-area {
-      background: #0f1e2b;
-      border-radius: 24px;
-      padding: 16px;
-      margin-top: 12px;
-      border: 1px solid #2d4a5e;
-    }
-    .data-transfer-area h4 {
-      color: #c8e0ef;
-      font-size: 0.9rem;
-      margin-bottom: 10px;
-    }
-    .data-transfer-area .btn {
-      flex: 0 1 auto;
-      padding: 8px 18px;
-      font-size: 0.85rem;
-      min-width: 80px;
-    }
-    .data-transfer-area .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-    .data-transfer-area .row label {
-      color: #8aacbf;
-      font-size: 0.8rem;
-      min-width: 100px;
-    }
-    .data-transfer-area .row input {
-      background: #162b3a;
-      border: 1px solid #2f5066;
-      padding: 6px 12px;
-      border-radius: 20px;
-      color: white;
-      font-size: 0.85rem;
-      outline: none;
-      flex: 1;
-      min-width: 120px;
-    }
-    .data-transfer-area .row input:focus {
-      border-color: #5a9ec9;
-    }
-    .data-transfer-status {
-      color: #7b9eb3;
-      font-size: 0.75rem;
-      margin-top: 8px;
-    }
-    #installBtn {
-      display: none;
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 999;
-      background: #3a7da8;
-      border: none;
-      border-bottom: 4px solid #1d4d6a;
-      padding: 14px 32px;
-      border-radius: 60px;
-      font-weight: 700;
-      font-size: 1.0rem;
-      color: #f2fcff;
-      cursor: pointer;
-      box-shadow: 0 8px 0 #0b1e2b, 0 12px 24px rgba(0, 0, 0, 0.6);
-      transition: 0.06s ease;
-      min-width: 200px;
-      text-align: center;
-    }
-    #installBtn:active {
-      transform: translateX(-50%) translateY(4px);
-      box-shadow: 0 4px 0 #0b1e2b;
-    }
     @media (max-width: 500px) {
       .app {
         padding: 14px 10px;
@@ -856,28 +946,36 @@
         padding: 6px 12px;
         font-size: 0.8rem;
       }
-      #installBtn {
-        padding: 12px 20px;
-        font-size: 0.9rem;
-        min-width: 160px;
-        bottom: 12px;
+      .speed-question .q {
+        font-size: 2rem;
+      }
+      .speed-timer {
+        font-size: 1.4rem;
+        padding: 0 10px;
+      }
+      .speed-input-area .input-group input {
+        width: 80px;
+        font-size: 1rem;
       }
     }
   </style>
 </head>
 <body>
-  <button id="installBtn" onclick="installApp()">アプリをインストール</button>
+  <!-- インストールボタン（PWA） -->
+  <button id="installBtn" onclick="installApp()">📲 アプリをインストール</button>
 
   <div class="app">
+    <!-- タブ -->
     <div class="tabs">
-      <button class="tab-btn active" data-tab="tabChallenge">挑戦</button>
+      <button class="tab-btn active" data-tab="tabTimeAttack">タイムアタック</button>
+      <button class="tab-btn" data-tab="tabSpeed">スピード</button>
       <button class="tab-btn" data-tab="tabBattle">対戦</button>
       <button class="tab-btn" data-tab="tabRanking">ランキング</button>
       <button class="tab-btn" data-tab="tabSettings">設定</button>
     </div>
 
-    <!-- 挑戦タブ -->
-    <div id="tabChallenge" class="tab-content active">
+    <!-- ===== タイムアタックタブ（旧挑戦タブ） ===== -->
+    <div id="tabTimeAttack" class="tab-content active">
       <div class="status-bar">
         <span class="timer" id="timerDisplay">0.0</span>
         <span class="status-msg" id="statusMessage">待機</span>
@@ -914,7 +1012,29 @@
       </div>
     </div>
 
-    <!-- 対戦タブ -->
+    <!-- ===== スピードタブ ===== -->
+    <div id="tabSpeed" class="tab-content">
+      <div class="speed-status">
+        <span class="speed-score">正解: <span id="speedScore">0</span>問</span>
+        <span class="speed-timer" id="speedTimer">0.0s</span>
+      </div>
+      <div class="speed-question">
+        <div class="q" id="speedQuestion">?</div>
+      </div>
+      <div class="speed-input-area">
+        <div class="input-group">
+          <label>答え =</label>
+          <input type="number" id="speedAnswer" step="any" value="" autofocus />
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" id="speedStartBtn">スタート</button>
+        <button class="btn btn-success" id="speedSubmitBtn" disabled>解答</button>
+      </div>
+      <div class="toast" id="speedToast">スタートボタンを押して開始</div>
+    </div>
+
+    <!-- ===== 対戦タブ ===== -->
     <div id="tabBattle" class="tab-content">
       <div class="battle-status">
         <div class="battle-score">
@@ -932,11 +1052,10 @@
         <input type="text" id="roomIdInput" placeholder="自由に設定" maxlength="20" />
         <button class="btn btn-primary" id="battleCreateBtn">作成</button>
         <button class="btn btn-secondary" id="battleJoinBtn">参加</button>
-        <button class="btn btn-success" id="battleRandomBtn">マッチング</button>
-        <button class="btn btn-stop-match" id="battleStopMatchBtn" style="display:none;">停止</button>
         <span class="battle-room-status" id="roomStatus">-</span>
       </div>
 
+      <!-- 投票エリア -->
       <div id="voteArea" class="vote-area" style="display:none;">
         <h3>桁数に投票してください</h3>
         <div class="vote-buttons" id="voteButtons">
@@ -970,6 +1089,7 @@
         </div>
       </div>
 
+      <!-- 続けて対戦ボタン -->
       <div class="battle-continue-area" id="battleContinueArea" style="display:none;">
         <button class="btn btn-primary" id="battleContinueBtn">続けて対戦</button>
         <span id="continueStatus" style="color:#8aacbf; font-size:0.85rem; margin-left:10px;"></span>
@@ -989,37 +1109,18 @@
       </div>
     </div>
 
-    <!-- ランキングタブ -->
+    <!-- ===== ランキングタブ ===== -->
     <div id="tabRanking" class="tab-content">
       <div class="rank-section">
         <div class="rank-header">
           <span>ランキング</span>
-          <span style="font-size:0.8rem; color:#8aacbf;">上位3人</span>
-        </div>
-        <div class="rank-sub-tabs" id="rankSubTabs">
-          <button class="rank-sub-tab active" data-subtab="rate">レート</button>
-          <button class="rank-sub-tab" data-subtab="time">タイム</button>
-        </div>
-        <div id="rateRankingContent">
-          <div class="rank-rate-header">
-            <span>順位 / プレイヤー</span>
-            <span>レート</span>
+          <div class="sub-tabs" id="rankSubTabs">
+            <button class="sub-tab-btn active" data-rank="time">タイムランキング</button>
+            <button class="sub-tab-btn" data-rank="speed">スピードランキング</button>
           </div>
-          <ul class="rank-list" id="rateRankingList"><li class="empty">読み込み中...</li></ul>
-          <div class="rank-reset-info" id="rankResetInfo">毎週月曜リセット</div>
         </div>
-        <div id="timeRankingContent" style="display:none;">
-          <div class="rank-tabs" id="rankTabContainer">
-            <button class="rank-tab-btn active" data-digit="1">1桁</button>
-            <button class="rank-tab-btn" data-digit="2">2桁</button>
-            <button class="rank-tab-btn" data-digit="3">3桁</button>
-            <button class="rank-tab-btn" data-digit="4">4桁</button>
-            <button class="rank-tab-btn" data-digit="5">5桁</button>
-          </div>
-          <ul class="rank-list" id="timeRankingList"><li class="empty">読み込み中...</li></ul>
-          <div class="footer">一人1記録 桁別</div>
-        </div>
-        <div class="footer" id="rankFooter">Firebase レート制 / タイムアタック</div>
+        <ul class="rank-list" id="rankingList"><li class="empty">読み込み中...</li></ul>
+        <div class="footer">Firebase · 一人1記録 · 桁別</div>
       </div>
       <div class="memo-section">
         <div class="memo-header">
@@ -1033,7 +1134,7 @@
       </div>
     </div>
 
-    <!-- 設定タブ -->
+    <!-- ===== 設定タブ ===== -->
     <div id="tabSettings" class="tab-content">
       <div class="settings">
         <div class="setting-row">
@@ -1058,8 +1159,10 @@
         <div class="delete-section">
           <button class="btn btn-danger" id="deleteAccountBtn" style="min-width:140px;">アカウント削除</button>
         </div>
+
+        <!-- 引き継ぎエリア -->
         <div class="data-transfer-area">
-          <h4>データの引き継ぎ</h4>
+          <h4>📦 データの引き継ぎ</h4>
           <div class="row">
             <label>エクスポートコード</label>
             <input type="text" id="exportCode" readonly value="コードを生成してください" style="cursor:pointer;" onclick="this.select();" />
@@ -1072,14 +1175,17 @@
           </div>
           <div class="data-transfer-status" id="dataTransferStatus">データはローカルに保存されています</div>
         </div>
+
+        <!-- 自分の作成ルーム一覧 -->
         <div class="my-rooms-area">
-          <h4>作成したルーム（最大3つ）</h4>
+          <h4>📁 作成したルーム（最大3つ）</h4>
           <div class="my-rooms-list" id="myRoomsList">
             <div class="my-rooms-empty">読み込み中...</div>
           </div>
           <div class="my-rooms-limit" id="myRoomsLimit"></div>
         </div>
       </div>
+
       <div class="memo-section">
         <div class="memo-header">
           <span>メモ</span>
@@ -1095,6 +1201,106 @@
 
   <script>
     // ============================================================
+    //  ルーム全削除機能（削除済み）
+    // ============================================================
+
+    // ============================================================
+    //  自分の作成ルーム一覧 & 削除機能
+    // ============================================================
+    function loadMyRooms() {
+      const listEl = document.getElementById('myRoomsList');
+      const limitEl = document.getElementById('myRoomsLimit');
+      const username = document.getElementById('usernameInput').value.trim() || '名無し';
+
+      if (!window.battleRef) {
+        listEl.innerHTML = '<div class="my-rooms-empty">Firebaseに接続されていません</div>';
+        return;
+      }
+
+      window.battleRef.once('value')
+        .then((snap) => {
+          const data = snap.val();
+          const myRooms = [];
+          if (data) {
+            Object.keys(data).forEach(key => {
+              const room = data[key];
+              if (room.creator === username) {
+                myRooms.push({
+                  id: key,
+                  status: room.status || 'waiting',
+                  players: room.players ? Object.keys(room.players).length : 0,
+                  maxPlayers: room.maxPlayers || 4,
+                  timestamp: room.timestamp || 0
+                });
+              }
+            });
+          }
+
+          myRooms.sort((a, b) => b.timestamp - a.timestamp);
+
+          if (myRooms.length === 0) {
+            listEl.innerHTML = '<div class="my-rooms-empty">作成したルームはありません</div>';
+            limitEl.textContent = `0 / 3`;
+            return;
+          }
+
+          limitEl.textContent = `${myRooms.length} / 3`;
+
+          listEl.innerHTML = '';
+          myRooms.forEach(room => {
+            const item = document.createElement('div');
+            item.className = 'my-room-item';
+            const statusText = room.status === 'waiting' ? '待機中' :
+              room.status === 'voting' ? '投票中' :
+              room.status === 'playing' ? '対戦中' :
+              room.status === 'finished' ? '終了' : room.status;
+            item.innerHTML = `
+              <span class="room-name">${room.id}</span>
+              <span class="room-status">${statusText} (${room.players}/${room.maxPlayers}人)</span>
+              <button class="btn btn-danger" data-roomid="${room.id}">削除</button>
+            `;
+            listEl.appendChild(item);
+
+            const deleteBtn = item.querySelector('.btn');
+            deleteBtn.addEventListener('click', function(e) {
+              e.stopPropagation();
+              const roomId = this.dataset.roomid;
+              if (!confirm(`ルーム「${roomId}」を削除しますか？`)) return;
+              window.battleRef.child(roomId).remove()
+                .then(() => {
+                  if (window.battleRoomId === roomId) {
+                    window.battleRoomId = null;
+                    window.battleIsReady = false;
+                    window.battleIsPlaying = false;
+                    window.battleIsFinished = false;
+                    const matchArea = document.getElementById('battleMatchArea');
+                    const questionArea = document.getElementById('battleQuestionArea');
+                    if (matchArea) matchArea.style.display = 'none';
+                    if (questionArea) questionArea.style.display = 'none';
+                    document.getElementById('roomStatus').textContent = '-';
+                    document.getElementById('opponentNameDisplay').textContent = '待機中';
+                    document.getElementById('playerList').innerHTML = '';
+                    document.getElementById('battleResult').style.display = 'none';
+                    document.getElementById('battleResult').textContent = '';
+                    document.getElementById('battleContinueArea').style.display = 'none';
+                    updateBattleUI();
+                  }
+                  loadMyRooms();
+                  toastMessage(`ルーム「${roomId}」を削除しました`);
+                })
+                .catch((err) => {
+                  toastMessage('ルーム削除に失敗しました: ' + err.message);
+                });
+            });
+          });
+        })
+        .catch((err) => {
+          listEl.innerHTML = '<div class="my-rooms-empty">読み込みエラー</div>';
+          console.error('ルーム一覧読み込みエラー:', err);
+        });
+    }
+
+    // ============================================================
     //  PWA インストール
     // ============================================================
     let deferredPrompt = null;
@@ -1107,7 +1313,7 @@
       const installBtn = document.getElementById('installBtn');
       if (installBtn) {
         installBtn.style.display = 'inline-block';
-        installBtn.textContent = 'アプリをインストール';
+        installBtn.textContent = '📲 アプリをインストール';
       }
     });
 
@@ -1136,10 +1342,405 @@
     });
 
     // ============================================================
-    //  ゲームメイン
+    //  データ引き継ぎ機能
     // ============================================================
     (function() {
-      // Firebase 設定
+      document.getElementById('exportDataBtn').addEventListener('click', function() {
+        try {
+          const data = {
+            username: localStorage.getItem('eq_username') || '',
+            name_locked: localStorage.getItem('eq_name_locked') || '',
+            memo: localStorage.getItem('memo_data') || '',
+            ranking: localStorage.getItem('rank_v5_all') || '',
+            speed_ranking: localStorage.getItem('speed_ranking') || '',
+            version: '1.0'
+          };
+          const json = JSON.stringify(data);
+          let encoded = '';
+          for (let i = 0; i < json.length; i++) {
+            encoded += String.fromCharCode(json.charCodeAt(i) + 1);
+          }
+          const code = btoa(encoded);
+          document.getElementById('exportCode').value = code;
+          document.getElementById('dataTransferStatus').textContent = '✅ エクスポートコードを生成しました';
+          document.getElementById('dataTransferStatus').style.color = '#7bc9a0';
+        } catch (e) {
+          document.getElementById('dataTransferStatus').textContent = '❌ エクスポートに失敗しました';
+          document.getElementById('dataTransferStatus').style.color = '#f5a3a3';
+        }
+      });
+
+      document.getElementById('importDataBtn').addEventListener('click', function() {
+        const code = document.getElementById('importCode').value.trim();
+        if (!code) {
+          document.getElementById('dataTransferStatus').textContent = '⚠️ コードを入力してください';
+          document.getElementById('dataTransferStatus').style.color = '#f5a3a3';
+          return;
+        }
+        try {
+          const decoded = atob(code);
+          let json = '';
+          for (let i = 0; i < decoded.length; i++) {
+            json += String.fromCharCode(decoded.charCodeAt(i) - 1);
+          }
+          const data = JSON.parse(json);
+          let restored = 0;
+          if (data.username) {
+            localStorage.setItem('eq_username', data.username);
+            document.getElementById('usernameInput').value = data.username;
+            restored++;
+          }
+          if (data.name_locked) {
+            localStorage.setItem('eq_name_locked', data.name_locked);
+            restored++;
+          }
+          if (data.memo) {
+            localStorage.setItem('memo_data', data.memo);
+            restored++;
+          }
+          if (data.ranking) {
+            localStorage.setItem('rank_v5_all', data.ranking);
+            restored++;
+          }
+          if (data.speed_ranking) {
+            localStorage.setItem('speed_ranking', data.speed_ranking);
+            restored++;
+          }
+          if (data.username) {
+            const nameLocked = localStorage.getItem('eq_name_locked') === 'true';
+            if (nameLocked) {
+              document.getElementById('usernameInput').disabled = true;
+              document.getElementById('saveUsernameBtn').disabled = true;
+              document.getElementById('nameLockStatus').textContent = '変更できません';
+              document.getElementById('nameLockStatus').style.color = '#f5a3a3';
+            }
+          }
+          if (data.memo) {
+            try {
+              const memoData = JSON.parse(data.memo);
+              const memoTexts = [
+                document.getElementById('memoText'),
+                document.getElementById('memoText2'),
+                document.getElementById('memoText3'),
+                document.getElementById('memoText4')
+              ];
+              for (let i = 0; i < memoTexts.length && i < memoData.length; i++) {
+                if (memoData[i] !== undefined) {
+                  memoTexts[i].value = memoData[i];
+                }
+              }
+            } catch (e) {}
+          }
+          document.getElementById('dataTransferStatus').textContent = `✅ ${restored}項目のデータを復元しました！`;
+          document.getElementById('dataTransferStatus').style.color = '#7bc9a0';
+          setTimeout(() => { window.location.reload(); }, 1000);
+        } catch (e) {
+          document.getElementById('dataTransferStatus').textContent = '❌ 復元に失敗しました: コードが正しくありません';
+          document.getElementById('dataTransferStatus').style.color = '#f5a3a3';
+        }
+      });
+    })();
+
+    // ============================================================
+    //  スピードモード
+    // ============================================================
+    (function() {
+      let speedScore = 0;
+      let speedTimer = null;
+      let speedTimeLeft = 0;
+      let speedTotalTime = 0;
+      let speedRunning = false;
+      let speedAnswered = false;
+      let speedCurrentDigit = 3;
+      let speedCurrentAnswer = 0;
+      let speedCurrentQuestion = '';
+      let speedStartTime = 0;
+      let speedQuestionsCount = 0;
+
+      const speedQuestionEl = document.getElementById('speedQuestion');
+      const speedAnswerInput = document.getElementById('speedAnswer');
+      const speedScoreEl = document.getElementById('speedScore');
+      const speedTimerEl = document.getElementById('speedTimer');
+      const speedStartBtn = document.getElementById('speedStartBtn');
+      const speedSubmitBtn = document.getElementById('speedSubmitBtn');
+      const speedToast = document.getElementById('speedToast');
+
+      function speedToastMsg(msg) {
+        speedToast.textContent = msg;
+        setTimeout(() => {
+          if (speedToast.textContent === msg) {
+            speedToast.textContent = 'スタートボタンを押して開始';
+          }
+        }, 3000);
+      }
+
+      function generateSpeedQuestion(digit) {
+        const maxVal = Math.pow(10, digit) - 1;
+        const minVal = digit === 1 ? 1 : Math.pow(10, digit - 1);
+        const a = Math.floor(Math.random() * (maxVal - minVal + 1)) + minVal;
+        const b = Math.floor(Math.random() * (maxVal - minVal + 1)) + minVal;
+        const ops = ['+', '-', '×', '÷'];
+        const op = ops[Math.floor(Math.random() * ops.length)];
+        let answer;
+        let question;
+
+        switch (op) {
+          case '+':
+            answer = a + b;
+            question = `${a} + ${b} = ?`;
+            break;
+          case '-':
+            answer = a - b;
+            question = `${a} - ${b} = ?`;
+            break;
+          case '×':
+            // 掛け算は桁数制限を緩和
+            const maxMul = Math.min(maxVal, Math.floor(Math.sqrt(1000000)));
+            const aMul = Math.floor(Math.random() * (maxMul - minVal + 1)) + minVal;
+            const bMul = Math.floor(Math.random() * (maxMul - minVal + 1)) + minVal;
+            answer = aMul * bMul;
+            question = `${aMul} × ${bMul} = ?`;
+            break;
+          case '÷':
+            // 割り算は割り切れるように
+            const bDiv = Math.floor(Math.random() * (maxVal - minVal + 1)) + minVal;
+            const result = Math.floor(Math.random() * (maxVal - minVal + 1)) + minVal;
+            answer = result;
+            const aDiv = bDiv * result;
+            question = `${aDiv} ÷ ${bDiv} = ?`;
+            break;
+        }
+
+        // 答えが大きすぎる場合（100万超）は再生成
+        if (Math.abs(answer) > 1000000) {
+          return generateSpeedQuestion(digit);
+        }
+
+        return { question, answer };
+      }
+
+      function startSpeedGame() {
+        if (speedRunning) return;
+        const digit = parseInt(document.getElementById('digitSelect').value) || 3;
+        speedCurrentDigit = digit;
+
+        // 制限時間: 3.5秒 × 桁数
+        speedTotalTime = 3.5 * digit;
+        speedTimeLeft = speedTotalTime;
+        speedScore = 0;
+        speedQuestionsCount = 0;
+        speedRunning = true;
+        speedAnswered = false;
+        speedStartTime = Date.now();
+
+        speedScoreEl.textContent = '0';
+        speedTimerEl.textContent = speedTimeLeft.toFixed(1);
+        speedTimerEl.classList.remove('warning');
+
+        speedStartBtn.disabled = true;
+        speedSubmitBtn.disabled = false;
+        speedAnswerInput.value = '';
+        speedAnswerInput.focus();
+
+        // 最初の問題
+        generateNewSpeedQuestion();
+
+        // タイマー開始
+        if (speedTimer) clearInterval(speedTimer);
+        speedTimer = setInterval(() => {
+          speedTimeLeft -= 0.1;
+          speedTimerEl.textContent = speedTimeLeft.toFixed(1);
+
+          if (speedTimeLeft <= 1.0) {
+            speedTimerEl.classList.add('warning');
+          }
+
+          if (speedTimeLeft <= 0) {
+            // タイムアップ！
+            clearInterval(speedTimer);
+            speedTimer = null;
+            speedRunning = false;
+            speedSubmitBtn.disabled = true;
+            speedStartBtn.disabled = false;
+            speedTimerEl.textContent = '0.0';
+            speedTimerEl.classList.remove('warning');
+            speedToastMsg(`⏰ タイムアップ！ ${speedScore}問正解！`);
+
+            // ランキング保存（スピード）
+            const username = document.getElementById('usernameInput').value.trim() || '名無し';
+            const digit = speedCurrentDigit;
+            const score = speedScore;
+            if (score > 0) {
+              saveSpeedRanking(username, digit, score, speedTotalTime);
+            }
+          }
+        }, 100);
+      }
+
+      function generateNewSpeedQuestion() {
+        if (!speedRunning) return;
+        const q = generateSpeedQuestion(speedCurrentDigit);
+        speedCurrentQuestion = q.question;
+        speedCurrentAnswer = q.answer;
+        speedQuestionEl.textContent = q.question;
+        speedAnswerInput.value = '';
+        speedAnswered = false;
+        speedAnswerInput.focus();
+        speedSubmitBtn.disabled = false;
+      }
+
+      function submitSpeedAnswer() {
+        if (!speedRunning || speedAnswered) return;
+        const userAnswer = parseFloat(speedAnswerInput.value);
+        if (isNaN(userAnswer)) {
+          speedToastMsg('数値を入力してください');
+          return;
+        }
+
+        const eps = 0.01;
+        if (Math.abs(userAnswer - speedCurrentAnswer) < eps) {
+          // 正解！
+          speedScore++;
+          speedQuestionsCount++;
+          speedScoreEl.textContent = speedScore;
+          speedToastMsg('✅ 正解！');
+          playCorrectSound();
+          // 次の問題
+          generateNewSpeedQuestion();
+        } else {
+          speedToastMsg(`❌ 不正解 (正解: ${speedCurrentAnswer})`);
+          playWrongSound();
+          // 次の問題へ（不正解でも次へ進む）
+          generateNewSpeedQuestion();
+        }
+      }
+
+      function saveSpeedRanking(username, digit, score, totalTime) {
+        const entry = {
+          username: username,
+          digit: digit,
+          score: score,
+          totalTime: Math.round(totalTime * 10) / 10,
+          timestamp: Date.now()
+        };
+
+        // ローカル保存
+        let rankings = [];
+        try {
+          const stored = localStorage.getItem('speed_ranking');
+          if (stored) rankings = JSON.parse(stored);
+        } catch (e) {}
+
+        // 同名のエントリを削除（一人1記録）
+        rankings = rankings.filter(r => r.username !== username);
+
+        rankings.push(entry);
+        rankings.sort((a, b) => b.score - a.score || a.totalTime - b.totalTime);
+        rankings = rankings.slice(0, 10);
+
+        localStorage.setItem('speed_ranking', JSON.stringify(rankings));
+
+        // Firebaseにも保存（任意）
+        if (window.speedRankingRef) {
+          window.speedRankingRef.child(username).set(entry).catch(() => {});
+        }
+
+        speedToastMsg(`🏆 ランキングに記録しました！ (${score}問)`);
+        renderSpeedRanking();
+      }
+
+      function renderSpeedRanking() {
+        const listEl = document.getElementById('rankingList');
+        // 現在表示中のランキングタブがスピードかチェック
+        const activeRankTab = document.querySelector('.sub-tab-btn.active');
+        if (!activeRankTab || activeRankTab.dataset.rank !== 'speed') return;
+
+        let rankings = [];
+        try {
+          const stored = localStorage.getItem('speed_ranking');
+          if (stored) rankings = JSON.parse(stored);
+        } catch (e) {}
+
+        listEl.innerHTML = '';
+        if (!rankings || rankings.length === 0) {
+          listEl.innerHTML = '<li class="empty">スピードランキングに記録はありません</li>';
+          return;
+        }
+
+        rankings.sort((a, b) => b.score - a.score || a.totalTime - b.totalTime);
+        rankings = rankings.slice(0, 10);
+
+        rankings.forEach((item, i) => {
+          const li = document.createElement('li');
+          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}`;
+          li.innerHTML = `
+            <span><span class="rank">${medal}</span> ${item.username} (${item.digit}桁)</span>
+            <span class="time">${item.score}問 / ${item.totalTime}s</span>
+          `;
+          listEl.appendChild(li);
+        });
+      }
+
+      // イベント
+      speedStartBtn.addEventListener('click', startSpeedGame);
+      speedSubmitBtn.addEventListener('click', submitSpeedAnswer);
+      speedAnswerInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (!speedRunning) {
+            startSpeedGame();
+          } else {
+            submitSpeedAnswer();
+          }
+        }
+      });
+
+      // ランキングタブ切り替えでスピードランキング表示
+      document.addEventListener('rankTabSwitched', function(e) {
+        if (e.detail === 'speed') {
+          renderSpeedRanking();
+        }
+      });
+    })();
+
+    // ============================================================
+    //  ランキングタブ切り替え
+    // ============================================================
+    (function() {
+      const subTabBtns = document.querySelectorAll('.sub-tab-btn');
+      const rankingList = document.getElementById('rankingList');
+
+      subTabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          subTabBtns.forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          const type = this.dataset.rank;
+
+          if (type === 'time') {
+            // タイムランキングは既存のrenderRankingを呼ぶ
+            if (typeof renderRanking === 'function') {
+              renderRanking();
+            }
+          } else if (type === 'speed') {
+            // スピードランキング
+            if (typeof renderSpeedRanking === 'function') {
+              renderSpeedRanking();
+            }
+          }
+
+          // イベント発火
+          document.dispatchEvent(new CustomEvent('rankTabSwitched', { detail: type }));
+        });
+      });
+    })();
+
+    // ============================================================
+    //  ゲームのメインスクリプト
+    // ============================================================
+    (function() {
+      // ============================================================
+      //  Firebase 設定
+      // ============================================================
       const firebaseConfig = {
         apiKey: "AIzaSyAqe24qeS_gYtMA_gnF_lYNP70keCQcpnA",
         authDomain: "renritu-56ae7.firebaseapp.com",
@@ -1154,352 +1755,38 @@
       let db = null;
       let rankingRef = null;
       let battleRef = null;
-      let rateRef = null;
-      let matchingRef = null;
+      let speedRankingRef = null;
+
+      window.battleRef = null;
+      window.battleRoomId = null;
+      window.battleIsReady = false;
+      window.battleIsPlaying = false;
+      window.battleIsFinished = false;
+      window.battleYourScore = 0;
+      window.battleOppScore = 0;
+      window.battleOpponentName = '';
+      window.battleIsMatched = false;
+      window.speedRankingRef = null;
 
       try {
         firebase.initializeApp(firebaseConfig);
         db = firebase.database();
         rankingRef = db.ref('ranking_v5');
         battleRef = db.ref('battle_rooms');
-        rateRef = db.ref('rate_ranking');
-        matchingRef = db.ref('matching_queue');
+        speedRankingRef = db.ref('speed_ranking');
+        window.battleRef = battleRef;
+        window.speedRankingRef = speedRankingRef;
         console.log('Firebase 接続成功');
       } catch (e) {
         console.warn('Firebase 初期化エラー', e);
       }
 
+      // 最大作成ルーム数
       const MAX_CREATED_ROOMS = 3;
-      const INITIAL_RATE = 1500;
-      const RATE_K = 32;
-      const MATCHING_TIMEOUT = 60000; // 60秒
 
-      function getWeekKey() {
-        const now = new Date();
-        const day = now.getDay();
-        const diff = (day === 0 ? 6 : day - 1);
-        const monday = new Date(now);
-        monday.setDate(now.getDate() - diff);
-        monday.setHours(0, 0, 0, 0);
-        return monday.toISOString().split('T')[0];
-      }
-
-      function getRateChange(winnerRate, loserRate) {
-        const expected = 1 / (1 + Math.pow(10, (loserRate - winnerRate) / 400));
-        return Math.round(RATE_K * (1 - expected));
-      }
-
-      function updateRate(winner, loser, callback) {
-        if (!rateRef) return;
-        rateRef.child(winner).once('value', (snap1) => {
-          const winnerData = snap1.val() || { rate: INITIAL_RATE, wins: 0, losses: 0, lastWeek: getWeekKey() };
-          rateRef.child(loser).once('value', (snap2) => {
-            const loserData = snap2.val() || { rate: INITIAL_RATE, wins: 0, losses: 0, lastWeek: getWeekKey() };
-            const change = getRateChange(winnerData.rate, loserData.rate);
-            const newWinnerRate = winnerData.rate + change;
-            const newLoserRate = loserData.rate - change;
-            const weekKey = getWeekKey();
-            const updates = {};
-            updates[`${winner}/rate`] = newWinnerRate;
-            updates[`${winner}/wins`] = (winnerData.wins || 0) + 1;
-            updates[`${winner}/lastWeek`] = weekKey;
-            updates[`${loser}/rate`] = newLoserRate;
-            updates[`${loser}/losses`] = (loserData.losses || 0) + 1;
-            updates[`${loser}/lastWeek`] = weekKey;
-            rateRef.update(updates).then(() => {
-              if (callback) callback(newWinnerRate, newLoserRate);
-            }).catch(() => {
-              if (callback) callback(winnerData.rate, loserData.rate);
-            });
-          });
-        });
-      }
-
-      // DOM
-      const timerDisplay = document.getElementById('timerDisplay');
-      const statusMsg = document.getElementById('statusMessage');
-      const eq1a = document.getElementById('eq1a');
-      const eq1b = document.getElementById('eq1b');
-      const eq1c = document.getElementById('eq1c');
-      const eq2a = document.getElementById('eq2a');
-      const eq2b = document.getElementById('eq2b');
-      const eq2c = document.getElementById('eq2c');
-      const inputX = document.getElementById('inputX');
-      const inputY = document.getElementById('inputY');
-      const checkBtn = document.getElementById('checkBtn');
-      const newGameBtn = document.getElementById('newGameBtn');
-      const stopBtn = document.getElementById('stopBtn');
-      const toast = document.getElementById('toastMessage');
-      const usernameInput = document.getElementById('usernameInput');
-      const saveUsernameBtn = document.getElementById('saveUsernameBtn');
-      const digitSelect = document.getElementById('digitSelect');
-      const deleteAccountBtn = document.getElementById('deleteAccountBtn');
-      const nameLockStatus = document.getElementById('nameLockStatus');
-      const volumeSlider = document.getElementById('volumeSlider');
-      const volumeLabel = document.getElementById('volumeLabel');
-      const toggleSoundBtn = document.getElementById('toggleSoundBtn');
-
-      const bEq1a = document.getElementById('bEq1a');
-      const bEq1b = document.getElementById('bEq1b');
-      const bEq1c = document.getElementById('bEq1c');
-      const bEq2a = document.getElementById('bEq2a');
-      const bEq2b = document.getElementById('bEq2b');
-      const bEq2c = document.getElementById('bEq2c');
-      const bInputX = document.getElementById('bInputX');
-      const bInputY = document.getElementById('bInputY');
-      const battleReadyBtn = document.getElementById('battleReadyBtn');
-      const battleAnswerBtn = document.getElementById('battleAnswerBtn');
-      const battleExitBtn = document.getElementById('battleExitBtn');
-      const battleJoinBtn = document.getElementById('battleJoinBtn');
-      const battleCreateBtn = document.getElementById('battleCreateBtn');
-      const battleRandomBtn = document.getElementById('battleRandomBtn');
-      const battleStopMatchBtn = document.getElementById('battleStopMatchBtn');
-      const battleContinueBtn = document.getElementById('battleContinueBtn');
-      const battleContinueArea = document.getElementById('battleContinueArea');
-      const continueStatus = document.getElementById('continueStatus');
-      const roomIdInput = document.getElementById('roomIdInput');
-      const roomStatus = document.getElementById('roomStatus');
-      const battleToast = document.getElementById('battleToast');
-      const yourScoreEl = document.getElementById('yourScore');
-      const opponentScoreEl = document.getElementById('opponentScore');
-      const winTargetEl = document.getElementById('winTarget');
-      const opponentNameDisplay = document.getElementById('opponentNameDisplay');
-      const battleResult = document.getElementById('battleResult');
-      const battleMatchArea = document.getElementById('battleMatchArea');
-      const battleQuestionArea = document.getElementById('battleQuestionArea');
-      const playerListEl = document.getElementById('playerList');
-      const voteArea = document.getElementById('voteArea');
-      const voteButtons = document.getElementById('voteButtons');
-      const voteStatus = document.getElementById('voteStatus');
-
-      const memoTexts = [
-        document.getElementById('memoText'),
-        document.getElementById('memoText2'),
-        document.getElementById('memoText3'),
-        document.getElementById('memoText4')
-      ];
-      const memoCounts = [
-        document.getElementById('memoCount'),
-        document.getElementById('memoCount2'),
-        document.getElementById('memoCount3'),
-        document.getElementById('memoCount4')
-      ];
-      const memoClearBtns = [
-        document.getElementById('memoClearBtn'),
-        document.getElementById('memoClearBtn2'),
-        document.getElementById('memoClearBtn3'),
-        document.getElementById('memoClearBtn4')
-      ];
-
-      const tabBtns = document.querySelectorAll('.tab-btn');
-      const tabContents = {
-        tabChallenge: document.getElementById('tabChallenge'),
-        tabBattle: document.getElementById('tabBattle'),
-        tabRanking: document.getElementById('tabRanking'),
-        tabSettings: document.getElementById('tabSettings')
-      };
-
-      function switchTab(tabId) {
-        tabBtns.forEach(btn => btn.classList.remove('active'));
-        const targetBtn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
-        if (targetBtn) targetBtn.classList.add('active');
-        Object.keys(tabContents).forEach(key => {
-          tabContents[key].classList.remove('active');
-        });
-        if (tabContents[tabId]) {
-          tabContents[tabId].classList.add('active');
-        }
-        saveAllMemo();
-        if (tabId === 'tabSettings') loadMyRooms();
-        if (tabId === 'tabRanking') {
-          loadRateRanking();
-          loadTimeRanking();
-        }
-      }
-
-      tabBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-          const tabId = this.dataset.tab;
-          if (tabId) switchTab(tabId);
-        });
-      });
-
-      // メモ機能
-      function loadAllMemo() {
-        try {
-          const saved = localStorage.getItem('memo_data');
-          if (saved) {
-            const data = JSON.parse(saved);
-            for (let i = 0; i < memoTexts.length; i++) {
-              if (data[i] !== undefined) {
-                memoTexts[i].value = data[i];
-                updateMemoCount(i);
-              }
-            }
-          }
-        } catch (e) {}
-      }
-
-      function saveAllMemo() {
-        try {
-          const data = memoTexts.map(t => t.value);
-          localStorage.setItem('memo_data', JSON.stringify(data));
-        } catch (e) {}
-      }
-
-      function updateMemoCount(index) {
-        const len = memoTexts[index].value.length;
-        memoCounts[index].textContent = `${len}/500`;
-      }
-
-      function clearMemo(index) {
-        memoTexts[index].value = '';
-        updateMemoCount(index);
-        saveAllMemo();
-      }
-
-      for (let i = 0; i < memoTexts.length; i++) {
-        memoTexts[i].addEventListener('input', function() {
-          updateMemoCount(i);
-          saveAllMemo();
-        });
-        memoClearBtns[i].addEventListener('click', function() {
-          clearMemo(i);
-        });
-      }
-
-      // Cookie
-      function setCookie(n, v, d = 365) {
-        const e = new Date();
-        e.setTime(e.getTime() + d * 24 * 60 * 60 * 1000);
-        document.cookie = `${n}=${encodeURIComponent(v)}; expires=${e.toUTCString()}; path=/; SameSite=Lax`;
-      }
-
-      function getCookie(n) {
-        const m = document.cookie.match(new RegExp('(^| )' + n + '=([^;]+)'));
-        return m ? decodeURIComponent(m[2]) : null;
-      }
-
-      function deleteCookie(n) {
-        document.cookie = `${n}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-      }
-
-      // 状態
-      let currentEq = { a1: 0, b1: 0, c1: 0, a2: 0, b2: 0, c2: 0 };
-      let timerInterval = null;
-      let startTime = null;
-      let elapsedSeconds = 0;
-      let isGameActive = false;
-      let isSolved = false;
-      let currentUsername = '';
-      let isNameLocked = false;
-      let selectedDigit = 3;
-      let allRankingData = [];
-
-      let battleRoomId = null;
-      let battleListener = null;
-      let battlePlayerId = null;
-      let battleYourScore = 0;
-      let battleOppScore = 0;
-      let battleWinTarget = 3;
-      let battleIsReady = false;
-      let battleIsPlaying = false;
-      let battleIsFinished = false;
-      let battleOpponentName = '';
-      let battleMySolved = false;
-      let battleOppSolved = false;
-      let battleWaitingForMatch = false;
-      let battleIsMatched = false;
-      let matchRetryCount = 0;
-      let matchTimeout = null;
-      let myVote = null;
-      let continuePressed = {};
-      let isMatching = false;
-      const MAX_PLAYERS = 2;
-
-      // 設定
-      function getDigit() { return parseInt(digitSelect.value, 10); }
-
-      function getUsername() { return usernameInput.value.trim() || '名無し'; }
-
-      function updateNameLockStatus() {
-        if (isNameLocked) {
-          usernameInput.disabled = true;
-          saveUsernameBtn.disabled = true;
-          nameLockStatus.textContent = '変更できません';
-          nameLockStatus.style.color = '#f5a3a3';
-        } else {
-          usernameInput.disabled = false;
-          saveUsernameBtn.disabled = false;
-          nameLockStatus.textContent = '';
-        }
-      }
-
-      // 問題生成
-      function generateEquation(forcedDigit) {
-        const digit = forcedDigit || getDigit();
-        const maxVal = Math.pow(10, digit) - 1;
-        const minVal = digit === 1 ? -9 : -(maxVal);
-        let x, y, a1, b1, c1, a2, b2, c2;
-        let attempts = 0;
-        do {
-          x = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
-          y = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
-          a1 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
-          b1 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
-          a2 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
-          b2 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
-          if (a1 === 0) a1 = 1;
-          if (b1 === 0) b1 = 1;
-          if (a2 === 0) a2 = 1;
-          if (b2 === 0) b2 = 1;
-          if (a1 === a2 && b1 === b2) {
-            a2 = (a2 + 1) % (maxVal + 1);
-            if (a2 === 0) a2 = 1;
-            b2 = (b2 + 1) % (maxVal + 1);
-            if (b2 === 0) b2 = 1;
-          }
-          c1 = a1 * x + b1 * y;
-          c2 = a2 * x + b2 * y;
-          attempts++;
-        } while (
-          (a1 === 0 && b1 === 0) || (a2 === 0 && b2 === 0) ||
-          attempts < 10 || Math.abs(c1) > 1000000 || Math.abs(c2) > 1000000 ||
-          (a1 === a2 && b1 === b2)
-        );
-        return { a1, b1, c1, a2, b2, c2, solutionX: x, solutionY: y };
-      }
-
-      function displayEquation(eq, isBattle = false) {
-        const t = isBattle ?
-          { a1: bEq1a, b1: bEq1b, c1: bEq1c, a2: bEq2a, b2: bEq2b, c2: bEq2c } :
-          { a1: eq1a, b1: eq1b, c1: eq1c, a2: eq2a, b2: eq2b, c2: eq2c };
-        t.a1.textContent = eq.a1;
-        t.b1.textContent = eq.b1;
-        t.c1.textContent = eq.c1;
-        t.a2.textContent = eq.a2;
-        t.b2.textContent = eq.b2;
-        t.c2.textContent = eq.c2;
-      }
-
-      // タイマー
-      function startTimer() {
-        if (timerInterval) clearInterval(timerInterval);
-        startTime = Date.now() - elapsedSeconds * 1000;
-        timerInterval = setInterval(() => {
-          elapsedSeconds = (Date.now() - startTime) / 1000;
-          timerDisplay.textContent = elapsedSeconds.toFixed(1);
-        }, 100);
-      }
-
-      function stopTimer() { if (timerInterval) { clearInterval(timerInterval);
-          timerInterval = null; } }
-
-      function resetTimer() { stopTimer();
-        elapsedSeconds = 0;
-        timerDisplay.textContent = '0.0'; }
-
-      // サウンド
+      // ============================================================
+      //  サウンド
+      // ============================================================
       let audioCtx = null;
       let soundEnabled = true;
       let masterVolume = 0.5;
@@ -1574,7 +1861,328 @@
         setTimeout(() => playTone(349.23, 0.15, 'sine', 0.2), 240);
       }
 
-      // 挑戦モード
+      // ============================================================
+      //  DOM
+      // ============================================================
+      const timerDisplay = document.getElementById('timerDisplay');
+      const statusMsg = document.getElementById('statusMessage');
+      const eq1a = document.getElementById('eq1a');
+      const eq1b = document.getElementById('eq1b');
+      const eq1c = document.getElementById('eq1c');
+      const eq2a = document.getElementById('eq2a');
+      const eq2b = document.getElementById('eq2b');
+      const eq2c = document.getElementById('eq2c');
+      const inputX = document.getElementById('inputX');
+      const inputY = document.getElementById('inputY');
+      const checkBtn = document.getElementById('checkBtn');
+      const newGameBtn = document.getElementById('newGameBtn');
+      const stopBtn = document.getElementById('stopBtn');
+      const rankingList = document.getElementById('rankingList');
+      const toast = document.getElementById('toastMessage');
+      const usernameInput = document.getElementById('usernameInput');
+      const saveUsernameBtn = document.getElementById('saveUsernameBtn');
+      const digitSelect = document.getElementById('digitSelect');
+      const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+      const nameLockStatus = document.getElementById('nameLockStatus');
+      const rankTabContainer = document.getElementById('rankTabContainer');
+      const volumeSlider = document.getElementById('volumeSlider');
+      const volumeLabel = document.getElementById('volumeLabel');
+      const toggleSoundBtn = document.getElementById('toggleSoundBtn');
+
+      const bEq1a = document.getElementById('bEq1a');
+      const bEq1b = document.getElementById('bEq1b');
+      const bEq1c = document.getElementById('bEq1c');
+      const bEq2a = document.getElementById('bEq2a');
+      const bEq2b = document.getElementById('bEq2b');
+      const bEq2c = document.getElementById('bEq2c');
+      const bInputX = document.getElementById('bInputX');
+      const bInputY = document.getElementById('bInputY');
+      const battleReadyBtn = document.getElementById('battleReadyBtn');
+      const battleAnswerBtn = document.getElementById('battleAnswerBtn');
+      const battleExitBtn = document.getElementById('battleExitBtn');
+      const battleJoinBtn = document.getElementById('battleJoinBtn');
+      const battleCreateBtn = document.getElementById('battleCreateBtn');
+      const battleContinueBtn = document.getElementById('battleContinueBtn');
+      const battleContinueArea = document.getElementById('battleContinueArea');
+      const continueStatus = document.getElementById('continueStatus');
+      const roomIdInput = document.getElementById('roomIdInput');
+      const roomStatus = document.getElementById('roomStatus');
+      const battleToast = document.getElementById('battleToast');
+      const yourScoreEl = document.getElementById('yourScore');
+      const opponentScoreEl = document.getElementById('opponentScore');
+      const winTargetEl = document.getElementById('winTarget');
+      const opponentNameDisplay = document.getElementById('opponentNameDisplay');
+      const battleResult = document.getElementById('battleResult');
+      const battleMatchArea = document.getElementById('battleMatchArea');
+      const battleQuestionArea = document.getElementById('battleQuestionArea');
+      const playerListEl = document.getElementById('playerList');
+      const voteArea = document.getElementById('voteArea');
+      const voteButtons = document.getElementById('voteButtons');
+      const voteStatus = document.getElementById('voteStatus');
+
+      const memoTexts = [
+        document.getElementById('memoText'),
+        document.getElementById('memoText2'),
+        document.getElementById('memoText3'),
+        document.getElementById('memoText4')
+      ];
+      const memoCounts = [
+        document.getElementById('memoCount'),
+        document.getElementById('memoCount2'),
+        document.getElementById('memoCount3'),
+        document.getElementById('memoCount4')
+      ];
+      const memoClearBtns = [
+        document.getElementById('memoClearBtn'),
+        document.getElementById('memoClearBtn2'),
+        document.getElementById('memoClearBtn3'),
+        document.getElementById('memoClearBtn4')
+      ];
+
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      const tabContents = {
+        tabTimeAttack: document.getElementById('tabTimeAttack'),
+        tabSpeed: document.getElementById('tabSpeed'),
+        tabBattle: document.getElementById('tabBattle'),
+        tabRanking: document.getElementById('tabRanking'),
+        tabSettings: document.getElementById('tabSettings')
+      };
+
+      function switchTab(tabId) {
+        tabBtns.forEach(btn => btn.classList.remove('active'));
+        const targetBtn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+        if (targetBtn) targetBtn.classList.add('active');
+        Object.keys(tabContents).forEach(key => {
+          tabContents[key].classList.remove('active');
+        });
+        if (tabContents[tabId]) {
+          tabContents[tabId].classList.add('active');
+        }
+        saveAllMemo();
+        if (tabId === 'tabSettings') {
+          loadMyRooms();
+        }
+        if (tabId === 'tabRanking') {
+          const activeRankTab = document.querySelector('.sub-tab-btn.active');
+          if (activeRankTab && activeRankTab.dataset.rank === 'speed') {
+            renderSpeedRanking();
+          } else {
+            renderRanking();
+          }
+        }
+      }
+
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          const tabId = this.dataset.tab;
+          if (tabId) switchTab(tabId);
+        });
+      });
+
+      // ============================================================
+      //  メモ機能
+      // ============================================================
+      function loadAllMemo() {
+        try {
+          const saved = localStorage.getItem('memo_data');
+          if (saved) {
+            const data = JSON.parse(saved);
+            for (let i = 0; i < memoTexts.length; i++) {
+              if (data[i] !== undefined) {
+                memoTexts[i].value = data[i];
+                updateMemoCount(i);
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      function saveAllMemo() {
+        try {
+          const data = memoTexts.map(t => t.value);
+          localStorage.setItem('memo_data', JSON.stringify(data));
+        } catch (e) {}
+      }
+
+      function updateMemoCount(index) {
+        const len = memoTexts[index].value.length;
+        memoCounts[index].textContent = `${len}/500`;
+      }
+
+      function clearMemo(index) {
+        memoTexts[index].value = '';
+        updateMemoCount(index);
+        saveAllMemo();
+      }
+
+      for (let i = 0; i < memoTexts.length; i++) {
+        memoTexts[i].addEventListener('input', function() {
+          updateMemoCount(i);
+          saveAllMemo();
+        });
+        memoClearBtns[i].addEventListener('click', function() {
+          clearMemo(i);
+        });
+      }
+
+      // ============================================================
+      //  Cookie
+      // ============================================================
+      function setCookie(n, v, d = 365) { const e = new Date();
+        e.setTime(e.getTime() + d * 24 * 60 * 60 * 1000);
+        document.cookie = `${n}=${encodeURIComponent(v)}; expires=${e.toUTCString()}; path=/; SameSite=Lax`; }
+
+      function getCookie(n) { const m = document.cookie.match(new RegExp('(^| )' + n + '=([^;]+)'));
+        return m ? decodeURIComponent(m[2]) : null; }
+
+      function deleteCookie(n) { document.cookie = `${n}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`; }
+
+      // ============================================================
+      //  状態
+      // ============================================================
+      let currentEq = { a1: 0, b1: 0, c1: 0, a2: 0, b2: 0, c2: 0 };
+      let timerInterval = null;
+      let startTime = null;
+      let elapsedSeconds = 0;
+      let isGameActive = false;
+      let isSolved = false;
+      let allRankingData = [];
+      let currentUsername = '';
+      let isNameLocked = false;
+      let selectedDigit = 3;
+
+      let battleRoomId = null;
+      let battleListener = null;
+      let battlePlayerId = null;
+      let battleYourScore = 0;
+      let battleOppScore = 0;
+      let battleWinTarget = 3;
+      let battleIsReady = false;
+      let battleIsPlaying = false;
+      let battleIsFinished = false;
+      let battleOpponentName = '';
+      let battleMySolved = false;
+      let battleOppSolved = false;
+      let battleWaitingForMatch = false;
+      let battleIsMatched = false;
+      const MAX_PLAYERS = 4;
+
+      let myVote = null;
+      let voteResults = {};
+      let continuePressed = {};
+      let isContinueMode = false;
+
+      window.battleRoomId = battleRoomId;
+      window.battleIsReady = battleIsReady;
+      window.battleIsPlaying = battleIsPlaying;
+      window.battleIsFinished = battleIsFinished;
+      window.battleYourScore = battleYourScore;
+      window.battleOppScore = battleOppScore;
+      window.battleOpponentName = battleOpponentName;
+      window.battleIsMatched = battleIsMatched;
+
+      // ============================================================
+      //  設定
+      // ============================================================
+      function getDigit() { return parseInt(digitSelect.value, 10); }
+
+      function getUsername() { return usernameInput.value.trim() || '名無し'; }
+
+      function updateNameLockStatus() {
+        if (isNameLocked) {
+          usernameInput.disabled = true;
+          saveUsernameBtn.disabled = true;
+          nameLockStatus.textContent = '変更できません';
+          nameLockStatus.style.color = '#f5a3a3';
+        } else {
+          usernameInput.disabled = false;
+          saveUsernameBtn.disabled = false;
+          nameLockStatus.textContent = '';
+        }
+      }
+
+      // ============================================================
+      //  問題生成
+      // ============================================================
+      function generateEquation(forcedDigit) {
+        const digit = forcedDigit || getDigit();
+        const maxVal = Math.pow(10, digit) - 1;
+        const minVal = digit === 1 ? -9 : -(maxVal);
+
+        let x, y, a1, b1, c1, a2, b2, c2;
+        let attempts = 0;
+
+        do {
+          x = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+          y = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+
+          a1 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+          b1 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+          a2 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+          b2 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+
+          if (a1 === 0) a1 = 1;
+          if (b1 === 0) b1 = 1;
+          if (a2 === 0) a2 = 1;
+          if (b2 === 0) b2 = 1;
+
+          if (a1 === a2 && b1 === b2) {
+            a2 = (a2 + 1) % (maxVal + 1);
+            if (a2 === 0) a2 = 1;
+            b2 = (b2 + 1) % (maxVal + 1);
+            if (b2 === 0) b2 = 1;
+          }
+
+          c1 = a1 * x + b1 * y;
+          c2 = a2 * x + b2 * y;
+
+          attempts++;
+        } while (
+          (a1 === 0 && b1 === 0) ||
+          (a2 === 0 && b2 === 0) ||
+          attempts < 10 ||
+          Math.abs(c1) > 1000000 ||
+          Math.abs(c2) > 1000000 ||
+          (a1 === a2 && b1 === b2)
+        );
+
+        return { a1, b1, c1, a2, b2, c2, solutionX: x, solutionY: y };
+      }
+
+      function displayEquation(eq, isBattle = false) {
+        const t = isBattle ?
+          { a1: bEq1a, b1: bEq1b, c1: bEq1c, a2: bEq2a, b2: bEq2b, c2: bEq2c } :
+          { a1: eq1a, b1: eq1b, c1: eq1c, a2: eq2a, b2: eq2b, c2: eq2c };
+        t.a1.textContent = eq.a1;
+        t.b1.textContent = eq.b1;
+        t.c1.textContent = eq.c1;
+        t.a2.textContent = eq.a2;
+        t.b2.textContent = eq.b2;
+        t.c2.textContent = eq.c2;
+      }
+
+      // ============================================================
+      //  タイマー
+      // ============================================================
+      function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        startTime = Date.now() - elapsedSeconds * 1000;
+        timerInterval = setInterval(() => {
+          elapsedSeconds = (Date.now() - startTime) / 1000;
+          timerDisplay.textContent = elapsedSeconds.toFixed(1);
+        }, 100);
+      }
+
+      function stopTimer() { if (timerInterval) { clearInterval(timerInterval);
+          timerInterval = null; } }
+
+      function resetTimer() { stopTimer();
+        elapsedSeconds = 0;
+        timerDisplay.textContent = '0.0'; }
+
+      // ============================================================
+      //  タイムアタックモード
+      // ============================================================
       function resetGame() {
         stopTimer();
         resetTimer();
@@ -1638,10 +2246,10 @@
           playCorrectSound();
           const name = getUsername();
           const digit = getDigit();
-          if (rankingRef) {
-            const entry = { username: name, time: Math.round(finalTime * 10) / 10, digit: digit, timestamp: Date.now() };
-            rankingRef.push(entry).catch(() => {});
-          }
+          const existing = allRankingData.find(r => r.username === name);
+          if (existing) { toastMessage(`「${name}」は既に使用されています`); return; }
+          const entry = { username: name, time: Math.round(finalTime * 10) / 10, digit: digit, timestamp: Date.now() };
+          saveRanking(entry);
         } else {
           toastMessage('不正解');
           statusMsg.textContent = '不正解';
@@ -1650,125 +2258,113 @@
         }
       }
 
-      // ランキング
-      function loadTimeRanking() {
-        const listEl = document.getElementById('timeRankingList');
-        if (!rankingRef) {
-          listEl.innerHTML = '<li class="empty">Firebaseに接続されていません</li>';
-          return;
-        }
-        rankingRef.once('value')
-          .then((snap) => {
-            const data = snap.val();
-            allRankingData = data ? Object.values(data) : [];
-            renderTimeRanking();
-          })
-          .catch(() => {
-            listEl.innerHTML = '<li class="empty">読み込みエラー</li>';
-          });
+      // ============================================================
+      //  ランキング
+      // ============================================================
+      function saveRanking(entry) {
+        if (rankingRef) { rankingRef.push(entry).catch(() => saveLocal(entry)); } else { saveLocal(entry); }
+        allRankingData.push(entry);
+        renderRanking();
       }
 
-      function renderTimeRanking() {
-        const listEl = document.getElementById('timeRankingList');
+      function saveLocal(entry) { allRankingData.push(entry);
+        localStorage.setItem('rank_v5_all', JSON.stringify(allRankingData));
+        renderRanking(); }
+
+      function loadRanking() {
+        if (rankingRef) {
+          rankingRef.on('value', (snap) => {
+            const data = snap.val();
+            allRankingData = data ? Object.values(data) : [];
+            renderRanking();
+          }, () => loadLocal());
+        } else { loadLocal(); }
+      }
+
+      function loadLocal() {
+        try {
+          const stored = localStorage.getItem('rank_v5_all');
+          allRankingData = stored ? JSON.parse(stored) : [];
+        } catch (e) { allRankingData = []; }
+        renderRanking();
+      }
+
+      function renderRanking() {
+        // タイムランキング表示（スピードランキングは別関数）
+        const activeRankTab = document.querySelector('.sub-tab-btn.active');
+        if (activeRankTab && activeRankTab.dataset.rank === 'speed') {
+          // スピードランキングは別関数で表示
+          return;
+        }
+
         const filtered = allRankingData.filter(item => item.digit === selectedDigit);
         filtered.sort((a, b) => a.time - b.time);
         const top3 = filtered.slice(0, 3);
-        listEl.innerHTML = '';
+        rankingList.innerHTML = '';
         if (!top3 || top3.length === 0) {
-          listEl.innerHTML = `<li class="empty">${selectedDigit}桁の記録はまだありません</li>`;
+          rankingList.innerHTML = `<li class="empty">${selectedDigit}桁の記録はまだありません</li>`;
           return;
         }
         top3.forEach((item, i) => {
           const li = document.createElement('li');
-          const medal = i === 0 ? '1' : i === 1 ? '2' : '3';
+          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
           li.innerHTML =
             `<span><span class="rank">${medal}</span> ${item.username}</span><span class="time">${item.time}s</span>`;
-          listEl.appendChild(li);
+          rankingList.appendChild(li);
         });
       }
 
-      function loadRateRanking() {
-        const listEl = document.getElementById('rateRankingList');
-        if (!rateRef) {
-          listEl.innerHTML = '<li class="empty">Firebaseに接続されていません</li>';
-          return;
-        }
-        rateRef.orderByChild('rate').limitToLast(10).once('value')
-          .then((snap) => {
-            const data = snap.val();
-            if (!data) {
-              listEl.innerHTML = '<li class="empty">まだレート記録がありません</li>';
-              return;
-            }
-            const entries = Object.keys(data).map(key => ({
-              name: key,
-              rate: data[key].rate || INITIAL_RATE,
-              wins: data[key].wins || 0,
-              losses: data[key].losses || 0,
-              lastWeek: data[key].lastWeek || ''
-            }));
-            entries.sort((a, b) => b.rate - a.rate);
-            const top10 = entries.slice(0, 10);
-            listEl.innerHTML = '';
-            top10.forEach((item, index) => {
-              const li = document.createElement('li');
-              const medal = index === 0 ? '1' : index === 1 ? '2' : index === 2 ? '3' : `#${index + 1}`;
-              li.innerHTML = `
-                <span><span class="rank">${medal}</span> ${item.name}</span>
-                <span class="rank-item-rate">${item.rate} <span style="font-size:0.7rem;color:#8aacbf;">(${item.wins}W/${item.losses}L)</span></span>
-              `;
-              listEl.appendChild(li);
-            });
-          })
-          .catch(() => {
-            listEl.innerHTML = '<li class="empty">読み込みエラー</li>';
-          });
-      }
-
       // ============================================================
-      //  対戦モード
+      //  対戦モード (3問先取)
       // ============================================================
       function battleToastMsg(msg) {
         battleToast.textContent = msg;
-        clearTimeout(battleToast._timeout);
-        battleToast._timeout = setTimeout(() => {
-          if (battleToast.textContent === msg) {
-            battleToast.textContent = '対戦相手を待っています';
-          }
-        }, 5000);
+        setTimeout(() => {
+          if (battleToast.textContent === msg) battleToast.textContent = '対戦相手を待っています';
+        }, 3000);
       }
 
       function generateBattleEquation(forcedDigit) {
         const digit = forcedDigit || getDigit();
         const maxVal = Math.pow(10, digit) - 1;
         const minVal = digit === 1 ? -9 : -(maxVal);
+
         let x, y, a1, b1, c1, a2, b2, c2;
         let attempts = 0;
+
         do {
           x = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
           y = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+
           a1 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
           b1 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
           a2 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
           b2 = Math.floor(Math.random() * (maxVal * 2 + 1)) + minVal;
+
           if (a1 === 0) a1 = 1;
           if (b1 === 0) b1 = 1;
           if (a2 === 0) a2 = 1;
           if (b2 === 0) b2 = 1;
+
           if (a1 === a2 && b1 === b2) {
             a2 = (a2 + 1) % (maxVal + 1);
             if (a2 === 0) a2 = 1;
             b2 = (b2 + 1) % (maxVal + 1);
             if (b2 === 0) b2 = 1;
           }
+
           c1 = a1 * x + b1 * y;
           c2 = a2 * x + b2 * y;
           attempts++;
         } while (
-          (a1 === 0 && b1 === 0) || (a2 === 0 && b2 === 0) ||
-          attempts < 10 || Math.abs(c1) > 1000000 || Math.abs(c2) > 1000000 ||
+          (a1 === 0 && b1 === 0) ||
+          (a2 === 0 && b2 === 0) ||
+          attempts < 10 ||
+          Math.abs(c1) > 1000000 ||
+          Math.abs(c2) > 1000000 ||
           (a1 === a2 && b1 === b2)
         );
+
         return { a1, b1, c1, a2, b2, c2, solutionX: x, solutionY: y };
       }
 
@@ -1843,16 +2439,19 @@
         if (votes[username]) {
           myVote = votes[username];
         }
+
         const counts = {};
         const totalVoters = Object.keys(votes).length;
         Object.values(votes).forEach(d => {
           counts[d] = (counts[d] || 0) + 1;
         });
+
         const btns = voteButtons.querySelectorAll('.btn');
         btns.forEach(btn => {
           const digit = parseInt(btn.dataset.digit);
           btn.classList.toggle('selected', myVote === digit);
         });
+
         const playerCount = Object.keys(players || {}).length;
         let statusText = `投票済み: ${totalVoters}/${playerCount}人`;
         if (totalVoters > 0) {
@@ -1861,6 +2460,7 @@
           statusText += ' | ' + detail;
         }
         voteStatus.textContent = statusText;
+
         if (totalVoters >= playerCount && playerCount >= 2) {
           let maxCount = 0;
           let winnerDigit = 3;
@@ -1873,6 +2473,70 @@
           voteStatus.textContent += ` → 決定: ${winnerDigit}桁！`;
           startBattleWithDigit(winnerDigit);
         }
+      }
+
+      function onCorrectAnswer(roomId) {
+        battleRef.child(roomId).once('value', (snap) => {
+          const data = snap.val();
+          if (!data) return;
+          const players = data.players || {};
+          const usernames = Object.keys(players);
+
+          let winner = null;
+          let winnerScore = 0;
+          usernames.forEach(n => {
+            const score = players[n]?.score || 0;
+            if (score >= battleWinTarget) {
+              winner = n;
+              winnerScore = score;
+            }
+          });
+
+          if (winner) {
+            battleIsFinished = true;
+            const isYou = winner === getUsername();
+            showBattleResult(`${isYou ? 'あなた' : winner} の勝利！ (${winnerScore}問正解)`);
+            battleToastMsg(`対戦終了！ ${winner} の勝利！`);
+            battleReadyBtn.disabled = true;
+            battleAnswerBtn.disabled = true;
+            battleRef.child(roomId).update({ status: 'finished' });
+            battleContinueArea.style.display = 'flex';
+            continuePressed = {};
+            updateContinueStatus(usernames);
+            return;
+          }
+
+          const votes = data.votes || {};
+          const counts = {};
+          Object.values(votes).forEach(d => {
+            counts[d] = (counts[d] || 0) + 1;
+          });
+          let maxCount = 0;
+          let winnerDigit = 3;
+          for (const [d, c] of Object.entries(counts)) {
+            if (c > maxCount) {
+              maxCount = c;
+              winnerDigit = parseInt(d);
+            }
+          }
+
+          const newEq = generateBattleEquation(winnerDigit);
+          battleRef.child(roomId).update({
+            equation: newEq
+          }).then(() => {
+            const resetUpdates = {};
+            usernames.forEach(n => {
+              resetUpdates[`players/${n}/solved`] = false;
+            });
+            battleRef.child(roomId).update(resetUpdates);
+            battleToastMsg(`次の問題が出ました！`);
+            setBattleEquation(newEq);
+            battleIsPlaying = true;
+            battleReadyBtn.disabled = true;
+            battleQuestionArea.style.display = 'block';
+            playStartSound();
+          });
+        });
       }
 
       function startBattleWithDigit(digit) {
@@ -1893,70 +2557,28 @@
         });
       }
 
-      function onCorrectAnswer(roomId) {
-        battleRef.child(roomId).once('value', (snap) => {
-          const data = snap.val();
-          if (!data) return;
-          const players = data.players || {};
-          const usernames = Object.keys(players);
-          const username = getUsername();
-          let winner = null;
-          let winnerScore = 0;
-          usernames.forEach(n => {
-            const score = players[n]?.score || 0;
-            if (score >= battleWinTarget) {
-              winner = n;
-              winnerScore = score;
+      function checkAndDeleteRoom(roomId) {
+        if (!roomId) return;
+        battleRef.child(roomId).once('value')
+          .then((snap) => {
+            const data = snap.val();
+            if (!data) return;
+            const players = data.players || {};
+            const playerCount = Object.keys(players).length;
+            if (playerCount === 0) {
+              battleRef.child(roomId).remove()
+                .then(() => {
+                  console.log('🗑️ ルームを削除しました:', roomId);
+                  loadMyRooms();
+                })
+                .catch((err) => {
+                  console.warn('ルーム削除エラー:', err);
+                });
             }
+          })
+          .catch((err) => {
+            console.warn('ルーム確認エラー:', err);
           });
-          if (winner) {
-            battleIsFinished = true;
-            const isYou = winner === username;
-            showBattleResult(`${isYou ? 'あなた' : winner} の勝利！ (${winnerScore}問正解)`);
-            battleToastMsg(`対戦終了！ ${winner} の勝利！`);
-            battleReadyBtn.disabled = true;
-            battleAnswerBtn.disabled = true;
-            battleRef.child(roomId).update({ status: 'finished' });
-            const losers = usernames.filter(n => n !== winner);
-            if (losers.length > 0 && rateRef) {
-              const loser = losers[0];
-              updateRate(winner, loser, () => {
-                loadRateRanking();
-              });
-            }
-            battleContinueArea.style.display = 'flex';
-            continuePressed = {};
-            updateContinueStatus(usernames);
-            return;
-          }
-          const votes = data.votes || {};
-          const counts = {};
-          Object.values(votes).forEach(d => {
-            counts[d] = (counts[d] || 0) + 1;
-          });
-          let maxCount = 0;
-          let winnerDigit = 3;
-          for (const [d, c] of Object.entries(counts)) {
-            if (c > maxCount) {
-              maxCount = c;
-              winnerDigit = parseInt(d);
-            }
-          }
-          const newEq = generateBattleEquation(winnerDigit);
-          battleRef.child(roomId).update({ equation: newEq }).then(() => {
-            const resetUpdates = {};
-            usernames.forEach(n => {
-              resetUpdates[`players/${n}/solved`] = false;
-            });
-            battleRef.child(roomId).update(resetUpdates);
-            battleToastMsg('次の問題が出ました！');
-            setBattleEquation(newEq);
-            battleIsPlaying = true;
-            battleReadyBtn.disabled = true;
-            battleQuestionArea.style.display = 'block';
-            playStartSound();
-          });
-        });
       }
 
       function updateContinueStatus(usernames) {
@@ -1966,7 +2588,9 @@
           continueStatus.textContent = `続けて対戦準備: ${pressed}/${total}人`;
           if (pressed === total) {
             continueStatus.textContent = '全員準備完了！ 再戦を開始します...';
-            setTimeout(() => { executeContinueBattle(); }, 1000);
+            setTimeout(() => {
+              executeContinueBattle();
+            }, 1000);
           }
         }
       }
@@ -2012,166 +2636,24 @@
         });
       }
 
-      // ============================================================
-      //  マッチングキュー処理 (停止ボタンまで継続)
-      // ============================================================
-      let matchingListener = null;
-      let matchingTimeoutId = null;
-
-      function startMatching() {
-        if (!battleRef || !matchingRef) {
-          battleToastMsg('マッチング機能が利用できません');
-          return;
-        }
-        if (battleWaitingForMatch || isMatching) {
-          battleToastMsg('既にマッチング中です');
-          return;
-        }
-        const username = getUsername();
-        if (!isNameLocked) {
-          battleToastMsg('先に名前を設定してください');
-          return;
-        }
-
-        isMatching = true;
-        battleWaitingForMatch = true;
-        battleStopMatchBtn.style.display = 'inline-block';
-        battleStopMatchBtn.textContent = '停止';
-        battleToastMsg('マッチング中...');
-
-        // マッチングキューに自分を登録（定期的に更新して生存確認）
-        function updateMatchingQueue() {
-          if (!battleWaitingForMatch || !isMatching) return;
-          matchingRef.child(username).set({
-            name: username,
-            timestamp: Date.now(),
-            active: true
-          }).catch(() => {});
-        }
-
-        // 初回登録
-        updateMatchingQueue();
-
-        // 定期的にキューを更新（15秒ごと）
-        if (matchingTimeoutId) clearInterval(matchingTimeoutId);
-        matchingTimeoutId = setInterval(updateMatchingQueue, 15000);
-
-        // マッチング監視開始
-        if (matchingListener) {
-          matchingListener.off();
-          matchingListener = null;
-        }
-
-        matchingListener = matchingRef.on('child_added', (snap) => {
-          const data = snap.val();
-          const key = snap.key;
-          if (!data || key === username || !data.active) return;
-
-          // 相手が見つかった！
-          const opponent = key;
-          battleToastMsg(`マッチング成功！ ${opponent} と対戦します`);
-
-          // マッチング状態をリセット
-          isMatching = false;
-          battleWaitingForMatch = false;
-          battleStopMatchBtn.style.display = 'none';
-          if (matchingTimeoutId) {
-            clearInterval(matchingTimeoutId);
-            matchingTimeoutId = null;
-          }
-          if (matchingListener) {
-            matchingListener.off();
-            matchingListener = null;
-          }
-          if (matchTimeout) {
-            clearTimeout(matchTimeout);
-            matchTimeout = null;
-          }
-
-          // 自分のキューを削除
-          matchingRef.child(username).remove().catch(() => {});
-
-          // 相手のキューも削除
-          matchingRef.child(opponent).remove().catch(() => {});
-
-          // ルーム作成
-          const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-          const roomData = {
-            players: {
-              [username]: { ready: false, score: 0, solved: false },
-              [opponent]: { ready: false, score: 0, solved: false }
-            },
-            votes: {},
-            winTarget: battleWinTarget,
-            status: 'waiting',
-            equation: null,
-            creator: username,
-            maxPlayers: MAX_PLAYERS,
-            timestamp: Date.now()
-          };
-
-          battleRef.child(roomId).set(roomData).then(() => {
-            battleRoomId = roomId;
-            roomIdInput.value = roomId;
-            roomStatus.textContent = `作成: ${roomId}`;
-            battleIsMatched = false;
-            battleContinueArea.style.display = 'none';
-            continuePressed = {};
-            continueStatus.textContent = '';
-            updateBattleAreas();
-            listenBattleRoom(roomId);
-            loadMyRooms();
-            battleToastMsg(`ルーム作成完了！ 準備OKを押してください`);
-          }).catch((err) => {
-            console.error('マッチングルーム作成エラー:', err);
-            battleToastMsg('マッチングに失敗しました');
-          });
+      function checkRoomLimit() {
+        return new Promise((resolve) => {
+          const username = getUsername();
+          battleRef.once('value')
+            .then((snap) => {
+              const data = snap.val();
+              let count = 0;
+              if (data) {
+                Object.keys(data).forEach(key => {
+                  if (data[key].creator === username) {
+                    count++;
+                  }
+                });
+              }
+              resolve(count < MAX_CREATED_ROOMS);
+            })
+            .catch(() => resolve(false));
         });
-
-        // タイムアウトはなし（停止ボタンで終了）
-      }
-
-      function stopRandomMatch() {
-        isMatching = false;
-        battleWaitingForMatch = false;
-        battleStopMatchBtn.style.display = 'none';
-        if (matchingTimeoutId) {
-          clearInterval(matchingTimeoutId);
-          matchingTimeoutId = null;
-        }
-        if (matchTimeout) {
-          clearTimeout(matchTimeout);
-          matchTimeout = null;
-        }
-        if (matchingListener) {
-          matchingListener.off();
-          matchingListener = null;
-        }
-        const username = getUsername();
-        if (matchingRef) {
-          matchingRef.child(username).remove().catch(() => {});
-        }
-        battleToastMsg('マッチングを停止しました');
-      }
-
-      function checkAndDeleteRoom(roomId) {
-        if (!roomId) return;
-        battleRef.child(roomId).once('value')
-          .then((snap) => {
-            const data = snap.val();
-            if (!data) return;
-            const players = data.players || {};
-            const playerCount = Object.keys(players).length;
-            if (playerCount === 0) {
-              battleRef.child(roomId).remove()
-                .then(() => {
-                  console.log('ルームを削除しました:', roomId);
-                  loadMyRooms();
-                })
-                .catch(() => {});
-            }
-          })
-          .catch(() => {});
       }
 
       function createBattleRoom() {
@@ -2187,43 +2669,50 @@
           return;
         }
         roomIdInput.value = roomId;
+
         const username = getUsername();
 
-        battleRef.child(roomId).once('value')
-          .then((snap) => {
-            if (snap.exists()) {
-              battleToastMsg('このルームIDは既に使用されています');
-              return;
-            }
-            const roomData = {
-              players: { [username]: { ready: false, score: 0, solved: false } },
-              votes: {},
-              winTarget: battleWinTarget,
-              status: 'waiting',
-              equation: null,
-              creator: username,
-              maxPlayers: MAX_PLAYERS,
-              timestamp: Date.now()
-            };
-            return battleRef.child(roomId).set(roomData);
-          })
-          .then(() => {
-            battleRoomId = roomId;
-            roomStatus.textContent = `作成: ${roomId}`;
-            battleToastMsg('ルームを作成しました。参加者を待っています');
-            battleIsMatched = false;
-            battleStopMatchBtn.style.display = 'none';
-            battleContinueArea.style.display = 'none';
-            continuePressed = {};
-            continueStatus.textContent = '';
-            updateBattleAreas();
-            listenBattleRoom(roomId);
-            loadMyRooms();
-          })
-          .catch((err) => {
-            console.error('作成エラー:', err);
-            battleToastMsg('ルーム作成に失敗しました');
-          });
+        checkRoomLimit().then((canCreate) => {
+          if (!canCreate) {
+            battleToastMsg(`ルームは最大${MAX_CREATED_ROOMS}つまでしか作成できません`);
+            return;
+          }
+
+          battleRef.child(roomId).once('value')
+            .then((snap) => {
+              if (snap.exists()) {
+                battleToastMsg('このルームIDは既に使用されています');
+                return;
+              }
+              const roomData = {
+                players: { [username]: { ready: false, score: 0, solved: false } },
+                votes: {},
+                winTarget: battleWinTarget,
+                status: 'waiting',
+                equation: null,
+                creator: username,
+                maxPlayers: MAX_PLAYERS,
+                timestamp: Date.now()
+              };
+              return battleRef.child(roomId).set(roomData);
+            })
+            .then(() => {
+              battleRoomId = roomId;
+              roomStatus.textContent = `作成: ${roomId}`;
+              battleToastMsg('ルームを作成しました。参加者を待っています');
+              battleIsMatched = false;
+              battleContinueArea.style.display = 'none';
+              continuePressed = {};
+              continueStatus.textContent = '';
+              updateBattleAreas();
+              listenBattleRoom(roomId);
+              loadMyRooms();
+            })
+            .catch((err) => {
+              console.error('作成エラー:', err);
+              battleToastMsg('ルーム作成に失敗しました (エラー: ' + err.message + ')');
+            });
+        });
       }
 
       function joinBattleRoom() {
@@ -2239,7 +2728,9 @@
           return;
         }
         roomIdInput.value = roomId;
+
         const username = getUsername();
+        battlePlayerId = username;
 
         battleRef.child(roomId).once('value')
           .then((snap) => {
@@ -2270,7 +2761,6 @@
             roomStatus.textContent = `参加: ${roomId}`;
             battleToastMsg('ルームに参加しました');
             battleIsMatched = false;
-            battleStopMatchBtn.style.display = 'none';
             battleContinueArea.style.display = 'none';
             continuePressed = {};
             continueStatus.textContent = '';
@@ -2279,7 +2769,7 @@
           })
           .catch((err) => {
             console.error('参加エラー:', err);
-            battleToastMsg('参加に失敗しました');
+            battleToastMsg('参加に失敗しました (エラー: ' + err.message + ')');
           });
       }
 
@@ -2316,11 +2806,13 @@
           }
 
           if (players[username]) battleYourScore = players[username].score || 0;
+
           let totalOppScore = 0;
           others.forEach(n => {
             totalOppScore += players[n]?.score || 0;
           });
           battleOppScore = totalOppScore;
+
           updateBattleUI();
 
           const votes = data.votes || {};
@@ -2366,7 +2858,9 @@
             const anySolved = usernames.some(n => players[n] && players[n].solved === true);
             if (anySolved && usernames.length >= 2) {
               battleToastMsg('正解者がいました！ 次の問題へ...');
-              setTimeout(() => { onCorrectAnswer(roomId); }, 1500);
+              setTimeout(() => {
+                onCorrectAnswer(roomId);
+              }, 1500);
             }
           }
 
@@ -2381,6 +2875,7 @@
           if (players[username] && players[username].solved === true) {
             battleMySolved = true;
           }
+
           updateBattleAreas();
           loadMyRooms();
         });
@@ -2473,19 +2968,17 @@
       function exitBattleRoom() {
         if (battleListener) { battleListener.off();
           battleListener = null; }
-        // マッチングキューからも削除
-        const username = getUsername();
-        if (matchingRef) {
-          matchingRef.child(username).remove().catch(() => {});
-        }
         if (battleRoomId && battleRef) {
           const roomId = battleRoomId;
+          const username = getUsername();
           const updates = {};
           updates[`players/${username}`] = null;
           updates[`votes/${username}`] = null;
           updates[`continue/${username}`] = null;
           battleRef.child(roomId).update(updates)
-            .then(() => { checkAndDeleteRoom(roomId); })
+            .then(() => {
+              checkAndDeleteRoom(roomId);
+            })
             .catch(() => {});
         }
         battleRoomId = null;
@@ -2497,24 +2990,10 @@
         battleOpponentName = '';
         battleMySolved = false;
         battleOppSolved = false;
-        battleWaitingForMatch = false;
         battleIsMatched = false;
-        isMatching = false;
         myVote = null;
+        voteResults = {};
         continuePressed = {};
-        battleStopMatchBtn.style.display = 'none';
-        if (matchingTimeoutId) {
-          clearInterval(matchingTimeoutId);
-          matchingTimeoutId = null;
-        }
-        if (matchTimeout) {
-          clearTimeout(matchTimeout);
-          matchTimeout = null;
-        }
-        if (matchingListener) {
-          matchingListener.off();
-          matchingListener = null;
-        }
         roomStatus.textContent = '-';
         opponentNameDisplay.textContent = '待機中';
         battleResult.style.display = 'none';
@@ -2540,123 +3019,57 @@
       }
 
       // ============================================================
-      //  myRooms
-      // ============================================================
-      function loadMyRooms() {
-        const listEl = document.getElementById('myRoomsList');
-        const limitEl = document.getElementById('myRoomsLimit');
-        const username = getUsername();
-        if (!battleRef) {
-          listEl.innerHTML = '<div class="my-rooms-empty">Firebaseに接続されていません</div>';
-          return;
-        }
-        battleRef.once('value')
-          .then((snap) => {
-            const data = snap.val();
-            const myRooms = [];
-            if (data) {
-              Object.keys(data).forEach(key => {
-                const room = data[key];
-                if (room.creator === username) {
-                  myRooms.push({
-                    id: key,
-                    status: room.status || 'waiting',
-                    players: room.players ? Object.keys(room.players).length : 0,
-                    maxPlayers: room.maxPlayers || 4,
-                    timestamp: room.timestamp || 0
-                  });
-                }
-              });
-            }
-            myRooms.sort((a, b) => b.timestamp - a.timestamp);
-            if (myRooms.length === 0) {
-              listEl.innerHTML = '<div class="my-rooms-empty">作成したルームはありません</div>';
-              limitEl.textContent = '0 / 3';
-              return;
-            }
-            limitEl.textContent = `${myRooms.length} / 3`;
-            listEl.innerHTML = '';
-            myRooms.forEach(room => {
-              const item = document.createElement('div');
-              item.className = 'my-room-item';
-              const statusText = room.status === 'waiting' ? '待機中' :
-                room.status === 'voting' ? '投票中' :
-                room.status === 'playing' ? '対戦中' :
-                room.status === 'finished' ? '終了' : room.status;
-              item.innerHTML = `
-                <span class="room-name">${room.id}</span>
-                <span class="room-status">${statusText} (${room.players}/${room.maxPlayers}人)</span>
-                <button class="btn btn-danger" data-roomid="${room.id}">削除</button>
-              `;
-              listEl.appendChild(item);
-              const deleteBtn = item.querySelector('.btn');
-              deleteBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const roomId = this.dataset.roomid;
-                if (!confirm(`ルーム「${roomId}」を削除しますか？`)) return;
-                battleRef.child(roomId).remove()
-                  .then(() => {
-                    if (battleRoomId === roomId) {
-                      battleRoomId = null;
-                      battleIsReady = false;
-                      battleIsPlaying = false;
-                      battleIsFinished = false;
-                      document.getElementById('battleMatchArea').style.display = 'none';
-                      document.getElementById('battleQuestionArea').style.display = 'none';
-                      document.getElementById('roomStatus').textContent = '-';
-                      document.getElementById('opponentNameDisplay').textContent = '待機中';
-                      document.getElementById('playerList').innerHTML = '';
-                      document.getElementById('battleResult').style.display = 'none';
-                      document.getElementById('battleResult').textContent = '';
-                      document.getElementById('battleContinueArea').style.display = 'none';
-                      updateBattleUI();
-                    }
-                    loadMyRooms();
-                    toastMessage(`ルーム「${roomId}」を削除しました`);
-                  })
-                  .catch((err) => {
-                    toastMessage('ルーム削除に失敗しました: ' + err.message);
-                  });
-              });
-            });
-          })
-          .catch(() => {
-            listEl.innerHTML = '<div class="my-rooms-empty">読み込みエラー</div>';
-          });
-      }
-
-      // ============================================================
       //  アカウント削除
       // ============================================================
       function deleteAccount() {
         const name = getUsername();
         if (!name || name === '名無し') { toastMessage('先にユーザー名を設定してください'); return; }
+        const myEntry = allRankingData.find(r => r.username === name);
+        if (!myEntry) { toastMessage(`「${name}」の記録は見つかりません`); return; }
         if (!confirm(`「${name}」のアカウントと全ての記録を削除しますか？`)) return;
-        if (rateRef) {
-          rateRef.child(name).remove().catch(() => {});
-        }
         if (rankingRef) {
-          rankingRef.once('value', (snap) => {
-            const data = snap.val();
-            if (data) {
+          rankingRef.once('value')
+            .then((snap) => {
+              const data = snap.val();
+              if (!data) { toastMessage('削除するデータがありません'); return; }
               const updates = {};
+              let found = false;
               Object.keys(data).forEach(key => {
-                if (data[key].username === name) { updates[key] = null; }
+                if (data[key].username === name) { updates[key] = null;
+                  found = true; }
               });
-              rankingRef.update(updates);
-            }
-          });
+              if (!found) { toastMessage(`「${name}」の記録は見つかりません`); return; }
+              return rankingRef.update(updates);
+            })
+            .then(() => {
+              allRankingData = allRankingData.filter(r => r.username !== name);
+              localStorage.setItem('rank_v5_all', JSON.stringify(allRankingData));
+              deleteCookie('eq_username');
+              deleteCookie('eq_name_locked');
+              usernameInput.value = '';
+              currentUsername = '';
+              isNameLocked = false;
+              updateNameLockStatus();
+              toastMessage(`「${name}」のアカウントと記録を削除しました`);
+              renderRanking();
+              resetGame();
+              stopBgm();
+            })
+            .catch(() => toastMessage('削除に失敗しました'));
+        } else {
+          allRankingData = allRankingData.filter(r => r.username !== name);
+          localStorage.setItem('rank_v5_all', JSON.stringify(allRankingData));
+          deleteCookie('eq_username');
+          deleteCookie('eq_name_locked');
+          usernameInput.value = '';
+          currentUsername = '';
+          isNameLocked = false;
+          updateNameLockStatus();
+          toastMessage('アカウントと記録を削除しました (ローカル)');
+          renderRanking();
+          resetGame();
+          stopBgm();
         }
-        toastMessage(`「${name}」のアカウントと記録を削除しました`);
-        deleteCookie('eq_username');
-        deleteCookie('eq_name_locked');
-        usernameInput.value = '';
-        currentUsername = '';
-        isNameLocked = false;
-        updateNameLockStatus();
-        loadRateRanking();
-        loadTimeRanking();
-        loadMyRooms();
       }
 
       // ============================================================
@@ -2664,45 +3077,21 @@
       // ============================================================
       function toastMessage(msg) {
         toast.textContent = msg;
-        clearTimeout(toast._timeout);
-        toast._timeout = setTimeout(() => {
-          if (toast.textContent === msg) {
-            toast.textContent = '挑戦ボタンでスタート';
-          }
-        }, 3000);
+        setTimeout(() => { if (toast.textContent === msg) toast.textContent = '挑戦ボタンでスタート'; }, 3000);
       }
 
       // ============================================================
-      //  ランキングサブタブ
+      //  ランキング桁タブ（タイムランキング用）
       // ============================================================
-      document.querySelectorAll('.rank-sub-tab').forEach(tab => {
-        tab.addEventListener('click', function() {
-          document.querySelectorAll('.rank-sub-tab').forEach(t => t.classList.remove('active'));
-          this.classList.add('active');
-          const subtab = this.dataset.subtab;
-          if (subtab === 'rate') {
-            document.getElementById('rateRankingContent').style.display = 'block';
-            document.getElementById('timeRankingContent').style.display = 'none';
-            document.getElementById('rankFooter').textContent = 'Firebase レート制（毎週月曜リセット）';
-            loadRateRanking();
-          } else {
-            document.getElementById('rateRankingContent').style.display = 'none';
-            document.getElementById('timeRankingContent').style.display = 'block';
-            document.getElementById('rankFooter').textContent = 'Firebase 一人1記録 桁別タイムアタック';
-            loadTimeRanking();
-          }
-        });
-      });
-
-      document.getElementById('rankTabContainer').addEventListener('click', (e) => {
+      rankTabContainer.addEventListener('click', (e) => {
         const btn = e.target.closest('.rank-tab-btn');
         if (!btn) return;
         const digit = parseInt(btn.dataset.digit, 10);
         if (isNaN(digit)) return;
-        document.querySelectorAll('#rankTabContainer .rank-tab-btn').forEach(b => b.classList.remove('active'));
+        rankTabContainer.querySelectorAll('.rank-tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         selectedDigit = digit;
-        renderTimeRanking();
+        renderRanking();
       });
 
       // ============================================================
@@ -2717,45 +3106,19 @@
         updateNameLockStatus();
       }
 
-      saveUsernameBtn.addEventListener('click', function() {
+      saveUsernameBtn.addEventListener('click', () => {
         if (isNameLocked) { toastMessage('名前は一度設定すると変更できません'); return; }
         const name = usernameInput.value.trim();
         if (!name) { toastMessage('名前を入力してください'); return; }
-        if (rateRef) {
-          rateRef.child(name).once('value', (snap) => {
-            if (snap.exists() && name !== getUsername()) {
-              toastMessage(`「${name}」は既に使用されています`);
-              return;
-            }
-            isNameLocked = true;
-            setCookie('eq_username', name);
-            setCookie('eq_name_locked', 'true');
-            currentUsername = name;
-            updateNameLockStatus();
-            toastMessage(`ユーザー名: ${name} を保存しました (変更不可)`);
-            if (rateRef) {
-              rateRef.child(name).once('value', (snap2) => {
-                if (!snap2.exists()) {
-                  rateRef.child(name).set({
-                    rate: INITIAL_RATE,
-                    wins: 0,
-                    losses: 0,
-                    lastWeek: getWeekKey()
-                  });
-                }
-              });
-            }
-            loadRateRanking();
-            loadMyRooms();
-          });
-        } else {
-          isNameLocked = true;
-          setCookie('eq_username', name);
-          setCookie('eq_name_locked', 'true');
-          currentUsername = name;
-          updateNameLockStatus();
-          toastMessage(`ユーザー名: ${name} を保存しました (変更不可)`);
-        }
+        const exists = allRankingData.some(r => r.username === name);
+        if (exists) { toastMessage(`「${name}」は既に使用されています`); return; }
+        isNameLocked = true;
+        setCookie('eq_username', name);
+        setCookie('eq_name_locked', 'true');
+        currentUsername = name;
+        updateNameLockStatus();
+        toastMessage(`ユーザー名: ${name} を保存しました (変更不可)`);
+        setTimeout(loadMyRooms, 500);
       });
 
       // ============================================================
@@ -2784,8 +3147,6 @@
 
       battleCreateBtn.addEventListener('click', createBattleRoom);
       battleJoinBtn.addEventListener('click', joinBattleRoom);
-      battleRandomBtn.addEventListener('click', startMatching);
-      battleStopMatchBtn.addEventListener('click', stopRandomMatch);
       battleReadyBtn.addEventListener('click', setBattleReady);
       battleAnswerBtn.addEventListener('click', battleAnswer);
       battleExitBtn.addEventListener('click', exitBattleRoom);
@@ -2813,8 +3174,7 @@
       // ============================================================
       function init() {
         loadUsernameFromCookie();
-        loadRateRanking();
-        loadTimeRanking();
+        loadRanking();
         loadAllMemo();
         isGameActive = false;
         isSolved = false;
@@ -2826,7 +3186,6 @@
         battleContinueArea.style.display = 'none';
         continueStatus.textContent = '';
         continuePressed = {};
-        isMatching = false;
 
         if (battleRef) {
           battleRef.once('value', (snap) => {
@@ -2838,9 +3197,11 @@
                 const players = room.players || {};
                 const playerCount = Object.keys(players).length;
                 if (playerCount === 0) {
-                  battleRef.child(key).remove().then(() => {
-                    console.log('起動時に空ルームを削除:', key);
-                  }).catch(() => {});
+                  battleRef.child(key).remove()
+                    .then(() => {
+                      console.log('🗑️ 起動時に空ルームを削除:', key);
+                    })
+                    .catch(() => {});
                 }
               });
             }
@@ -2853,6 +3214,35 @@
           if (!audioCtx) { try { audioCtx = new(window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
         }, { once: true });
       }
+
+      // renderSpeedRankingをグローバルに公開（スピードモードから呼び出し可能に）
+      window.renderSpeedRanking = function() {
+        const listEl = document.getElementById('rankingList');
+        let rankings = [];
+        try {
+          const stored = localStorage.getItem('speed_ranking');
+          if (stored) rankings = JSON.parse(stored);
+        } catch (e) {}
+
+        listEl.innerHTML = '';
+        if (!rankings || rankings.length === 0) {
+          listEl.innerHTML = '<li class="empty">スピードランキングに記録はありません</li>';
+          return;
+        }
+
+        rankings.sort((a, b) => b.score - a.score || a.totalTime - b.totalTime);
+        rankings = rankings.slice(0, 10);
+
+        rankings.forEach((item, i) => {
+          const li = document.createElement('li');
+          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}`;
+          li.innerHTML = `
+            <span><span class="rank">${medal}</span> ${item.username} (${item.digit}桁)</span>
+            <span class="time">${item.score}問 / ${item.totalTime}s</span>
+          `;
+          listEl.appendChild(li);
+        });
+      };
 
       init();
     })();
